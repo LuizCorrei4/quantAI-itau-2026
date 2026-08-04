@@ -2,7 +2,13 @@
 ## Grafo de Correlação Dinâmica e Centralidade de Rede para Seleção de Portfólio
 ### Desafio Quant AI Itaú Asset 2026
 
-> **Status:** Versão 1.2 — Esqueleto de execução revisado (17/ago/2026). Este documento é o guia-mestre do projeto até a entrega final (16/ago/2026, 23h59). Pode ser adaptado conforme a equipe avance.
+> **Status:** Versão 1.3 — Esqueleto de execução revisado (04/ago/2026). Este documento é o guia-mestre do projeto até a entrega final (16/ago/2026, 23h59). Pode ser adaptado conforme a equipe avance.
+
+### Changelog (Versão 1.3)
+- **Data/Versão:** Atualização do cabeçalho corrigindo data de revisão para antes do deadline.
+- **Dados:** Correção de tickers (SOUZ3 -> CRUZ3) e clarificação entre deslistagem real e ticker renomeado (ex: VVAR3).
+- **Filtro de Regime:** Esclarecido que o percentil é escolhido no in-sample (testando alternativas) e fixado no out-of-sample, exigindo transparência no relatório.
+- **Matriz de Correlação:** Detalhada a implementação do Ledoit-Wolf (covariância → shrinkage → correlação), alvo do shrinkage e o risco de compressão do sinal.
 
 ### Changelog (Versão 1.2)
 - **Dados:** Validação empírica revelou falha do `yfinance` para ativos deslistados. Plano ajustado para focar em universo baseado em liquidez (sobreviventes).
@@ -141,9 +147,9 @@ A conexão entre centralidade de rede e risco de portfólio foi explorada em:
 - Período sugerido: **Janeiro de 2012 a Dezembro de 2025** (13 anos, cobrindo múltiplos ciclos: Dilma, Temer, COVID, Bolsonaro, Lula).
 
 **Validação Empírica de Disponibilidade de Dados (Agosto/2026):**
-Testamos empiricamente a obtenção da composição histórica do IBOV e de preços diários de uma amostra de ações deslistadas/fundidas (ex: `SOUZ3.SA`, `VVAR3.SA`, `BTOW3.SA`, `BRML3.SA`) via `yfinance`.
-- **O que falhou:** O `yfinance` não retorna dados para tickers extintos (empresas que faliram, foram compradas ou mudaram de nome, como a antiga Via Varejo VVAR3, ou B2W BTOW3). Obter a composição oficial exata do Ibovespa a cada 4 meses ao longo de 13 anos e baixar os dados históricos de empresas "mortas" exigiria uma base de dados premium (como Economatica ou Bloomberg), o que é inviável no momento.
-- **O Novo Universo ("Sobreviventes por Liquidez"):** Como não podemos testar o que já não existe mais, nosso universo de análise será composto **apenas pelas empresas que existem hoje e "sobreviveram" na bolsa**. Dessas empresas que estão ativas hoje no `yfinance`, nós vamos puxar o histórico de preços até 2012. A cada mês do backtest, nosso algoritmo filtrará as **80 ações que tiveram o maior volume financeiro negociado no passado recente**, restringindo a alocação apenas a elas.
+Testamos empiricamente a obtenção da composição histórica do IBOV e de preços diários de uma amostra de ações via `yfinance`, cobrindo tanto deslistagens reais (ex: `CRUZ3.SA` da Souza Cruz) quanto tickers renomeados/fundidos (ex: `VVAR3.SA`, que virou `VIIA3.SA`, e `BTOW3.SA`).
+- **O que falhou:** O `yfinance` não retorna dados para tickers extintos no formato antigo. É crucial notar a diferença: "deslistagem real" (a empresa sumiu da bolsa, como Souza Cruz) gera um buraco de dados sem solução em APIs gratuitas. Já "ticker renomeado" (como Via Varejo, que continua ativa sob outro nome) poderia ser recuperado se tivermos uma tabela de mapeamento de tickers. No momento, sem essa tabela e sem uma base premium (como Economatica), o acesso direto falha.
+- **O Novo Universo ("Sobreviventes por Liquidez"):** Assumindo temporariamente que não faremos o mapeamento (decisão pendente de checagem), nosso universo de análise será composto **apenas pelas empresas que existem hoje e "sobreviveram" na bolsa**. Dessas empresas que estão ativas hoje no `yfinance`, nós vamos puxar o histórico de preços até 2012. A cada mês do backtest, nosso algoritmo filtrará as **80 ações que tiveram o maior volume financeiro negociado no passado recente**, restringindo a alocação apenas a elas.
 - **O que isso significa de forma simples?** Em vez da regra exigir que "o robô só pode comprar ações que estão na lista oficial do Ibovespa", nossa nova regra dirá: "dentre as empresas que existem hoje, o robô só pode comprar as 80 ações mais líquidas e negociadas daquele período". Essa é uma técnica amplamente aceita porque o próprio Ibovespa é, por definição, um índice focado nas ações de maior liquidez e volume.
 - **O Custo dessa Decisão (Survivorship Bias / Viés de Sobrevivência):** Essa manobra nos salva de ficar travados sem dados, mas cobra um preço estatístico. Ao olhar apenas para as ações que estão "vivas" em 2026, nós "apagamos da história" as empresas que deram errado e faliram na última década. Isso naturalmente faz o retorno final do backtest parecer um pouco melhor do que a realidade (já que não sofremos as perdas de ações que viraram pó). Como a banca sabe muito bem que dados premium custam caro, a melhor saída é assumir essa limitação e **declarar esse viés com total transparência no relatório final**. Isso demonstra maturidade analítica e não mascara o projeto.
 
@@ -174,7 +180,8 @@ Para cada mês `t` do backtest, o rebalanceamento da carteira ocorre sempre no p
 
 **A Fragilidade Estatística da Matriz de Correlação (Shrinkage):**
 Estimar uma matriz de correlação de 80 ações exige estimar cerca de 3.160 parâmetros (pares). Usar apenas 63 dias úteis para isso cria uma matriz mal condicionada. **Atenção:** A MST ajuda a mitigar o ruído da rede porque ela *descarta* as arestas fracas, mas ela **não** corrige o erro de estimação dos pesos nas arestas que sobrevivem na árvore.
-Para mitigar isso com rigor estatístico, utilizaremos o **Estimador de Shrinkage de Ledoit-Wolf** em vez da correlação de Pearson simples. O *shrinkage* "encolhe" os coeficientes extremos em direção à média, reduzindo o erro amostral e tornando a matriz mais estável. (Disponível em `sklearn.covariance.LedoitWolf`).
+Para mitigar isso com rigor estatístico, utilizaremos o **Estimador de Shrinkage de Ledoit-Wolf** (`sklearn.covariance.LedoitWolf`). É vital entender a implementação: o shrinkage atua na **matriz de covariância**, não na de correlação. O pipeline exato é: (1) estimar a covariância *shrinkada* dos retornos usando o alvo padrão do sklearn (a matriz identidade escalonada pela variância média); (2) normalizar essa covariância em uma matriz de correlação (dividindo pelas variâncias); e (3) só então aplicar a transformação geométrica de distância de Mantegna. 
+**Ressalva importante para o MVP:** O shrinkage reduz o erro, mas seu efeito colateral é comprimir a diferença entre correlações fortes e fracas (ele "achata" o sinal). Como a MST precisa dessa diferença para separar quem é central de quem é periférico, precisamos monitorar no MVP se a técnica não achatou demais a rede, comparando a dispersão das centralidades com e sem o shrinkage, e relatar isso.
 
 **Teste de robustez:** Rodaremos o backtest também com janelas de 42 e 126 dias para verificar se os resultados são sensíveis a essa escolha.
 
@@ -266,9 +273,9 @@ A MST não nos dá apenas as posições relativas das ações; ela também nos d
 
 **A Métrica de Regime e a Escolha do Threshold (Evitando Overfitting):**
 Monitoraremos a "distância média normalizada" da MST mês a mês.
-- **Risco de Overfitting:** Se simularmos todo o backtest e depois escolhermos "o threshold que maximiza o Sharpe", o modelo será inválido e sobre-otimizado.
-- **Regra de Definição (A priori e Backward-looking):** O threshold de ativação será dinâmico. No mês `t`, a crise será sinalizada se a distância média for menor ou igual ao **10º percentil histórico** das distâncias registradas *exclusivamente* nos meses anteriores (desde o início do backtest até `t-1`). Ou seja, ativaremos a defesa apenas quando o mercado encolher para o decil mais extremo já visto.
-- **Validação:** Calibraremos o modelo e a lógica do percentil no período In-Sample (2013-2019) e avaliaremos o impacto no Out-of-Sample cego (2020-2025). Caso precisemos fixar um número rígido por falta de tempo computacional para janelas expansivas, essa limitação será confessada no relatório.
+- **Risco de Overfitting:** Se simularmos todo o backtest e depois escolhermos o threshold ao final para todo o período, o modelo será inválido e sobre-otimizado.
+- **Regra de Definição (Calibração In-Sample e Aplicação Out-of-Sample):** A regra é "backward-looking" (só olha para distâncias até `t-1`). Mas **o valor exato do percentil** (ex: 5%, 10% ou 15% histórico) não virá do nada: ele será **calibrado (testado)** no nosso período *In-Sample* (2013-2019). O percentil que melhor proteger a carteira nesses anos será então fixado e aplicado cegamente no período *Out-of-Sample* (2020-2025).
+- **Transparência Absoluta:** Temos que reconhecer que calibrar o percentil no In-Sample ainda é uma forma branda de overfitting. Para demonstrar maturidade analítica, relataremos **todas** as alternativas testadas (5%, 10%, 15%) e seus resultados no In-Sample, justificando a escolha final e mostrando se ela sobreviveu no Out-of-Sample.
 - **Defesa Ativa:** Se a métrica de distância da MST cair abruptamente abaixo desse limiar crítico (sinalizando um pânico sistêmico iminente), acionaremos o mecanismo de defesa.
 - **Redução de Exposição:** O algoritmo cortará o nível de exposição na renda variável (por exemplo, reduzindo a alocação do Top 10 para 50% ou até 20%) e **alocará o restante do dinheiro com segurança no CDI** (caixa livre de risco).
 - **Retomada:** Quando a distância média voltar a subir e ultrapassar o threshold de segurança (sinalizando calmaria e retorno da dispersão), restauraremos a exposição nas 10 ações periféricas para 100%.
