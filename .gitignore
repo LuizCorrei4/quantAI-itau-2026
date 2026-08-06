@@ -1,1 +1,8 @@
 .venv/
+__pycache__/
+*.pyc
+
+# Dados regeneráveis pelos scripts 01-04 (pesados). Os CSVs e o relatório
+# de qualidade ficam versionados por serem o registro factual das decisões.
+dados/brutos/*.parquet
+dados/processados/*.parquet
