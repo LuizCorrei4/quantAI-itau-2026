@@ -6,7 +6,7 @@ Como temos apenas 6 dias até a entrega e o pipeline de dados já está concluí
 **Branch sugerida:** `feat/backtest-core`
 **Foco:** O coração matemático da estratégia.
 
-* **10-11/ago:** Resolver a etapa pendente da Métrica de Periferia (Testar as 7 candidatas/controles na Parte 2.5 e decidir a vencedora).
+* **10-11/ago:** Resolver a etapa pendente da Métrica de Periferia (Testar as 7 candidatas/controles na Parte 2.5 e decidir a vencedora). (FEITO -> `scripts/06_avaliar_periferia.py`, a métrica vencedora está cravada no `plano_final_nexus.md`).
 * **11-12/ago:** Codificar o Loop do Backtest (MVP). Ler os dados limpos, calcular a Matriz de Correlação (Ledoit-Wolf), transformar em distâncias, gerar a MST (`networkx`), elencar o Top 10 Equal-Weight e calcular o retorno acumulado com os descontos de custos de transação.
 * **13/ago:** Fazer o *merge* do seu trabalho com a Pessoa 2 (Filtros). 
 

@@ -580,11 +580,19 @@ A métrica escolhida deve:
 3. Ter interpretação econômica defensável em uma frase.
 4. Vencer, ou ao menos igualar com justificativa, os dois controles de 2.5.4.
 
+#### 2.5.6 Veredito Oficial (Atualizado em 10/ago/2026)
+
+Conforme testes empíricos rigorosos realizados e documentados em `docs/decisao_metrica_periferia_MST.md` (via script `06_avaliar_periferia.py`), a métrica oficial cravada para a estratégia é a **FARNESS (Soma Absoluta das Distâncias)**. 
+- A *Betweenness* foi matematicamente reprovada (54% de empates no valor zero). 
+- O *Edge Length* mostrou-se excessivamente correlacionado com o baseline de baixo Beta ("míope", não vê a árvore inteira). 
+- A *Closeness* inverte contra-intuitivamente a escala (dificultando a explicação para a banca). 
+A **Farness** provou ser 100% contínua, isolar ações verdadeiramente imunes aos choques sistêmicos e capturar a macro-topologia real do mercado.
+
 ### 2.6 Etapa 5: Seleção e Alocação
 
 > **Consome:** ranking da Etapa 4. **Produz:** vetor de pesos.
 
-**Regra de seleção:** ordenar as 80 ações do universo pela métrica de periferia escolhida e pegar as **10 mais periféricas**.
+**Regra de seleção:** ordenar as 80 ações do universo pela **Farness** (da maior para a menor, visto que valores maiores indicam ações mais distantes do "miolo" da rede) e selecionar as **10 mais periféricas**.
 
 *Por que 80 e por que 10.* O universo de 80 nomes concentra a liquidez da B3 — buscar alfa fora dele significa small caps com spread de compra/venda enorme e backtest irrealista. Isolar 10 de 80 (os 12,5% mais periféricos) é um filtro forte dentro de um universo com liquidez garantida.
 
