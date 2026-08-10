@@ -6,3 +6,5 @@ __pycache__/
 # de qualidade ficam versionados por serem o registro factual das decisões.
 dados/brutos/*.parquet
 dados/processados/*.parquet
+
+temp/
