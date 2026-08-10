@@ -568,7 +568,7 @@ Esta é a pergunta que a banca vai fazer: **"por que precisa de grafo?"** Se um 
 | Controle | Como calcular | O que testa |
 |---|---|---|
 | **Menor correlação média** | Para cada ação, média de ρ com as outras 79; pegar as 10 menores | Se a MST não ganhar deste, o grafo não agrega |
-| **Menor beta vs. Ibovespa** | Regressão dos retornos da ação contra o IBOV na janela de 63 dias | Testa se "periferia" é só um proxy de baixo beta |
+| **Menor beta vs. Ibovespa** | Regressão Linear (onde a inclinação/slope é o beta) dos retornos da ação contra o IBOV. O "Beta" mede o quanto a ação responde aos choques do mercado. Ações com baixo beta (< 1) variam menos e são o porto-seguro óbvio. | Testa se "ação periférica na rede MST" é só um jeito chique e complicado de selecionar ações de baixo beta. Se a MST só trouxer ações de baixo beta iguais à regressão, a teoria de grafos não agrega valor prático. |
 
 **Este é o teste mais importante do projeto para o critério de Conceito (20%).** Um resultado em que a MST empata com "menor correlação média" ainda é uma entrega honesta e valiosa — mas precisa ser dito.
 
