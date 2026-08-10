@@ -12,6 +12,7 @@ Este repositório contém todo o material, documentação e código necessários
 - **scripts/**: Pipeline de dados numerado, executável na ordem 01 → 05.
 - **src/nexus/**: Módulos de apoio (configuração, carteiras da B3, tabela de tickers históricos).
 - **dados/**: `brutos/` guarda o que veio das fontes sem transformação; `processados/` guarda os painéis prontos para o backtest. Os `.parquet` não são versionados — os scripts os regeneram.
+- **docs/**: Documentação técnica e relatórios de qualidade de dados.
 
 ## Pipeline de Dados
 
