@@ -33,3 +33,12 @@ COBERTURA_MINIMA = 0.90
 
 # Descarta tickers com histórico curto demais para qualquer uso.
 MIN_OBS_TICKER = 120
+
+# Backtest
+JANELA_CORRELACAO = 63       # Dias úteis para a matriz de correlação
+TOP_N = 10                   # Ações mais periféricas selecionadas
+CUSTO_POR_OPERACAO = 0.0005  # 0.05% por perna (5 bps)
+
+# Pasta de resultados
+RESULTADOS = DADOS / "resultados"
+RESULTADOS.mkdir(parents=True, exist_ok=True)
