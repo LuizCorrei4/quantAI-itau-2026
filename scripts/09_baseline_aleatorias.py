@@ -155,7 +155,7 @@ def main():
             verticalalignment='top', bbox=props)
             
     plt.tight_layout()
-    img_path = IMG_DIR / "histograma_sharpe_aleatorias.png"
+    img_path = IMG_DIR / "02_baseline_macacos_in_sample.png"
     plt.savefig(img_path, dpi=150)
     plt.close()
     

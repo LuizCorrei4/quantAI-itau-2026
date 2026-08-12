@@ -60,7 +60,7 @@ def gerar_graficos(df_resultados: pd.DataFrame):
     plt.legend(loc='upper left')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(IMG_DIR / "retorno_acumulado_nexus_vs_benchmarks.png", dpi=150)
+    plt.savefig(IMG_DIR / "01_mvp_puro_retorno_acumulado.png", dpi=150)
     plt.close()
 
     # 2. Drawdown - Para avaliar resiliência sistêmica (o vale das perdas)
@@ -73,7 +73,7 @@ def gerar_graficos(df_resultados: pd.DataFrame):
     plt.title("Drawdown do Robô Nexus (Quedas do Topo)", fontsize=12)
     plt.ylabel("% de Perda")
     plt.tight_layout()
-    plt.savefig(IMG_DIR / "drawdown_nexus.png", dpi=150)
+    plt.savefig(IMG_DIR / "01_mvp_puro_drawdown.png", dpi=150)
     plt.close()
 
     # 3. Turnover - Para checar estabilidade da carteira mensal
@@ -82,7 +82,7 @@ def gerar_graficos(df_resultados: pd.DataFrame):
     plt.title("Turnover Mensal (%)", fontsize=12)
     plt.ylabel("% da Carteira Girada")
     plt.tight_layout()
-    plt.savefig(IMG_DIR / "turnover_mensal_nexus.png", dpi=150)
+    plt.savefig(IMG_DIR / "01_mvp_puro_turnover_mensal.png", dpi=150)
     plt.close()
     
 def calcular_metricas_estatisticas(serie_retornos: pd.Series, risk_free_anual: float = 0.0) -> dict:
@@ -250,15 +250,15 @@ def main():
 ## 2. Gráficos Visuais de Desempenho
 
 ### 📈 Retorno Acumulado (Curva de Capital)
-![Curva de Capital](../images/retorno_acumulado_nexus_vs_benchmarks.png)
+![Curva de Capital](../images/01_mvp_puro_retorno_acumulado.png)
 
 > **Contexto para a Banca:** O Ibovespa no período rendeu *menos* que o CDI puro. Nosso benchmark e obstáculo central sempre será superar o dinheiro 100% livre de risco de crédito (CDI).
 
 ### 📉 Drawdown (As dores da Carteira)
-![Drawdown](../images/drawdown_nexus.png)
+![Drawdown](../images/01_mvp_puro_drawdown.png)
 
 ### 🔄 Estabilidade (Giro Mensal)
-![Turnover](../images/turnover_mensal_nexus.png)
+![Turnover](../images/01_mvp_puro_turnover_mensal.png)
 > **Turnover médio mensal:** {turnover_medio:.1f}% 
 *(Isso significa que o robô muda aproximadamente {turnover_medio / 10:.1f} ações por mês, segurando posições por mais de um semestre. Uma prova que a MST é estável no longo prazo).*
 

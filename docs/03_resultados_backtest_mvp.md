@@ -13,15 +13,15 @@
 ## 2. Gráficos Visuais de Desempenho
 
 ### 📈 Retorno Acumulado (Curva de Capital)
-![Curva de Capital](../images/retorno_acumulado_nexus_vs_benchmarks.png)
+![Curva de Capital](../images/01_mvp_puro_retorno_acumulado.png)
 
 > **Contexto para a Banca:** O Ibovespa no período rendeu *menos* que o CDI puro. Nosso benchmark e obstáculo central sempre será superar o dinheiro 100% livre de risco de crédito (CDI).
 
 ### 📉 Drawdown (As dores da Carteira)
-![Drawdown](../images/drawdown_nexus.png)
+![Drawdown](../images/01_mvp_puro_drawdown.png)
 
 ### 🔄 Estabilidade (Giro Mensal)
-![Turnover](../images/turnover_mensal_nexus.png)
+![Turnover](../images/01_mvp_puro_turnover_mensal.png)
 > **Turnover médio mensal:** 67.4% 
 *(Isso significa que o robô muda aproximadamente 6.7 ações por mês, segurando posições por mais de um semestre. Uma prova que a MST é estável no longo prazo).*
 

@@ -1,7 +1,7 @@
 """
-Etapa 6 - Backtest com Filtros de Alpha e Validação Cruzada Temporal (CV Temporal)
+Backtest com Filtros de Alpha e Validação Cruzada Temporal (CV Temporal)
 
-Este orquestrador (criado a partir do 07_backtest.py) foca na Missão 2 da Pessoa 1:
+Este orquestrador (criado a partir do 07_backtest.py) foca em:
 Injetar a convicção direcional (Momentum) sobre as ações descorrelacionadas (MST)
 e medir o impacto usando Validação Cruzada Temporal dentro do período In-Sample.
 
