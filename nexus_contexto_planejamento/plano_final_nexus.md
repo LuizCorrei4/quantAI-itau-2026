@@ -2,8 +2,18 @@
 ## Grafo de Correlação Dinâmica e Centralidade de Rede para Seleção de Portfólio
 ### Desafio Quant AI Itaú Asset 2026
 
-> **Status:** Versão 2.0 — Dados coletados e validados (06/ago/2026). Este documento é o guia-mestre do projeto.
+> **Status:** Versão 3.0 — Arquitetura em Cascata com Filtros de Alpha (12/ago/2026). Este documento é o guia-mestre do projeto.
 > **Deadline oficial (edital):** 17/ago/2026. **Meta interna da equipe:** 16/ago, deixando o dia 17 como buffer.
+
+### Changelog (Versão 3.0) — Arquitetura em Cascata com Filtros de Alpha
+Esta versão reformula o papel da MST no pipeline: de **seletor final de compra** para **filtro de universo descorrelacionado**. O MVP (v2.0) provou que a topologia sozinha não gera alpha no Brasil (Sharpe −0,21). A v3.0 adiciona uma camada de **Filtros de Alpha** (Momentum e, opcionalmente, ML) entre a seleção topológica e a alocação. Mudanças materiais:
+
+- **Mudança arquitetural central.** A MST + Farness seleciona o pool de candidatas descorrelacionadas (Top 15-20). Sobre esse pool, **Filtros de Alpha** (Preço > SMA e/ou classificador ML) decidem quais efetivamente comprar. A ação precisa ser periférica **E** mostrar convicção direcional.
+- **Filtro de Momentum adicionado.** Baseado na anomalia mais documentada em finanças (Jegadeesh & Titman, 1993). Parâmetro L (comprimento da SMA) calibrado no in-sample entre 4 valores.
+- **Filtro de ML (opcional/complementar).** Random Forest ou XGBoost com walk-forward validation. Complexidade limitada (max_depth ≤ 5). Marcado como opcional — só entra se melhorar sobre o Momentum puro, respeitando o princípio "Neutralidade quanto à complexidade" dos critérios do Itaú.
+- **Alocação adaptativa.** Se poucas ações passam em todos os filtros, a parcela não alocada vai para o CDI. Isso é feature, não bug: o robô prefere esperar a comprar sem convicção.
+- **Impacto esperado no turnover.** Os filtros de alpha exigem confirmações adicionais para compra/venda, o que deve reduzir drasticamente o turnover de 67% do MVP.
+- **Nova seção 2.6B (Etapa 5B)** com arquitetura técnica completa, anti-overfitting safeguards e mapeamento in-sample/out-of-sample.
 
 ### Changelog (Versão 2.0) — Revisão pós-coleta de dados
 Esta versão deixa de ser um plano hipotético sobre dados e passa a descrever **dados que existem**. Mudanças materiais:
@@ -165,11 +175,12 @@ Três pilares documentados.
 
 | Critério | Como o Nexus atende |
 |---|---|
-| **Conceito (20%)** | Hipótese testável com 3 pilares acadêmicos. Não é média móvel nem RSI. |
-| **Originalidade** | Teoria de Grafos + Finanças, mesma família do vencedor de 2024 (TDA). |
-| **Modelagem (20%)** | Pipeline 100% sistemático e reprodutível, do download ao peso da carteira. |
-| **Backtest (15%)** | Vieses tratados com evidência, não com declaração. Ver Parte 2.2 e 3.4. |
-| **Visual** | Grafos são extremamente visuais — perfeitos para 5 páginas. |
+| **Conceito (20%)** | Hipótese testável com 3 pilares acadêmicos. Arquitetura em cascata (topologia + momentum + regime) é original e modular. |
+| **Originalidade** | Teoria de Grafos + Finanças, mesma família do vencedor de 2024 (TDA). Diferencial: combina MST com filtros preditivos. |
+| **Modelagem (20%)** | Pipeline 100% sistemático e reprodutível, do download ao peso da carteira. Cada camada tem papel claro e testável isoladamente. |
+| **Backtest (15%)** | Vieses tratados com evidência, não com declaração. In-sample/out-of-sample rigoroso. Ver Parte 2.2 e 3.4. |
+| **Análise (15%)** | Teste de contribuição marginal: cada filtro (MST, Momentum, Regime) é avaliado isoladamente e em combinação. |
+| **Visual** | Diagrama de cascata + grafos MST são extremamente visuais — perfeitos para 5 páginas. |
 
 ---
 
@@ -180,9 +191,15 @@ Três pilares documentados.
 ```
 [Preços Diários] → [Retornos Log] → [Matriz de Correlação] → [Matriz de Distância]
        ↓
-[Minimum Spanning Tree (MST)] → [Métrica de Periferia] → [Ranking de Ações]
+[Minimum Spanning Tree (MST)] → [Métrica de Periferia (Farness)] → [Ranking de Ações]
        ↓
-[Seleção das Top N Periféricas] → [Alocação Equal-Weight]
+[Pool Periférico: Top N Candidatas]  ← "Filtro de Universo Descorrelacionado"
+       ↓
+[Filtros de Alpha]  ← NOVA CAMADA (v3.0)
+  ├─ Momentum: Preço > SMA(L)  
+  └─ ML (opcional): Classificador prevê retorno(+K dias) > 0
+       ↓
+[Ações Aprovadas] → [Alocação Equal-Weight entre aprovadas, resto em CDI]
        ↓
 [Filtro de Regime] → [Ajuste de Exposição: Ações ↔ CDI] → [Backtest]
 ```
@@ -588,26 +605,148 @@ Conforme testes empíricos rigorosos realizados e documentados em `docs/decisao_
 - A *Closeness* inverte contra-intuitivamente a escala (dificultando a explicação para a banca). 
 A **Farness** provou ser 100% contínua, isolar ações verdadeiramente imunes aos choques sistêmicos e capturar a macro-topologia real do mercado.
 
-### 2.6 Etapa 5: Seleção e Alocação
+### 2.6 Etapa 5: Seleção do Pool Periférico
 
-> **Consome:** ranking da Etapa 4. **Produz:** vetor de pesos.
+> **Consome:** ranking da Etapa 4. **Produz:** pool de candidatas para os Filtros de Alpha.
 
-**Regra de seleção:** ordenar as 80 ações do universo pela **Farness** (da maior para a menor, visto que valores maiores indicam ações mais distantes do "miolo" da rede) e selecionar as **10 mais periféricas**.
+**Regra de seleção do pool:** ordenar as 80 ações do universo pela **Farness** (da maior para a menor, visto que valores maiores indicam ações mais distantes do "miolo" da rede) e selecionar as **Top N mais periféricas** como **pool de candidatas**.
 
-*Por que 80 e por que 10.* O universo de 80 nomes concentra a liquidez da B3 — buscar alfa fora dele significa small caps com spread de compra/venda enorme e backtest irrealista. Isolar 10 de 80 (os 12,5% mais periféricos) é um filtro forte dentro de um universo com liquidez garantida.
+**Mudança na v3.0:** na versão anterior, o Top 10 era a carteira final. Agora o Top N (N = 15 ou 20, calibrado no in-sample) é um **pool de triagem** — as ações que efetivamente entram na carteira são decididas pelos Filtros de Alpha (Etapa 5B). A expansão do pool dá margem para os filtros operarem: se começássemos com 10, o Momentum eliminaria metade e a carteira ficaria concentrada demais.
 
-**Regra de alocação:** **equal-weight**, 10% em cada ação.
+*Por que 80 e por que N entre 15-20.* O universo de 80 nomes concentra a liquidez da B3 — buscar alfa fora dele significa small caps com spread de compra/venda enorme e backtest irrealista. Selecionar os 15-25% mais periféricos (Top 15-20 de 80) é um filtro forte dentro de um universo com liquidez garantida, e ao mesmo tempo largo o suficiente para que os Filtros de Alpha tenham material de trabalho.
+
+**Regra de alocação:** **equal-weight entre as ações aprovadas** pelos Filtros de Alpha. Se M ações passam em todos os filtros (M ≤ N), cada uma recebe 1/M do capital alocado a ações. O restante (1 − M/M_max) pode ir para o CDI quando o número de aprovadas é muito baixo — ver Etapa 5B.
 
 *Por que equal-weight e não otimização de Markowitz:* otimizar pesos exigiria estimar retornos esperados, que é exatamente a parte da matriz que menos se consegue estimar com 63 observações. Equal-weight é transparente, robusto e não introduz mais um grau de liberdade para overfitar. É uma escolha defensável, não preguiça.
 
-**Por que isso geraria alfa.** Em momentos de estresse, as ações sistêmicas do miolo da rede caem em bloco. Uma carteira posicionada de propósito nas pontas sofre menos esse choque coletivo. E quando essas ações sobem por fatores próprios, o ganho não fica diluído numa cesta de mercado. Rebalancear todo mês faz o portfólio "fugir" das ações que ganham atenção e migram para o centro da árvore.
+**Por que a seleção topológica sozinha NÃO basta (lição do MVP).**  O MVP (v2.0) provou que comprar as Top 10 periféricas indiscriminadamente produz Sharpe −0,21. O diagnóstico:
+
+1. **Estar na periferia da rede é condição necessária, mas não suficiente.** A ação pode ser descorrelacionada do mercado e ainda assim estar em queda livre. A MST não sabe nada sobre *direção* — ela só sabe sobre *estrutura*.
+2. **O turnover de 67% mostra que o modelo compra e vende sem convicção.** Ações entram porque ficaram periféricas num mês e saem no seguinte sem ter gerado retorno.
+3. **A periferia é onde olhar; o alpha vem de QUANDO comprar.** A MST filtra o universo para ações descorrelacionadas; os Filtros de Alpha (Etapa 5B) adicionam convicção direcional.
 
 **Onde a estratégia é frágil:**
 1. **Crash absoluto de liquidez.** Quando todos vendem tudo sem olhar fundamento (março de 2020), a rede se contrai tanto que o conceito de periferia perde força. Nossos dados mostram a correlação média indo a 0,595 nesse mês.
-2. **Custo de turnover.** Se as 10 ações mudarem completamente todo mês, a corretagem come o retorno. Medido explicitamente no backtest.
-3. **Concentração setorial acidental.** Nada na regra impede que as 10 periféricas de um mês sejam 6 elétricas. Precisamos **medir** a concentração setorial da carteira e reportar; se for extrema, considerar um teto por setor como variante.
+2. **Custo de turnover.** Se as ações mudarem completamente todo mês, a corretagem come o retorno. Os Filtros de Alpha devem mitigar isso (ver 2.6B), mas precisa ser medido no backtest.
+3. **Concentração setorial acidental.** Nada na regra impede que as periféricas de um mês sejam 6 elétricas. Precisamos **medir** a concentração setorial da carteira e reportar; se for extrema, considerar um teto por setor como variante.
 
-**Rebalanceamento:** mensal, no primeiro pregão. Recalcular MST com os 63 dias anteriores, vender o que saiu do Top 10, comprar o que entrou, reequilibrar todos para 10%.
+**Rebalanceamento:** mensal, no primeiro pregão. Recalcular MST com os 63 dias anteriores, atualizar o pool periférico, aplicar os Filtros de Alpha, reequilibrar pesos.
+
+### 2.6B Etapa 5B: Filtros de Alpha (Predição) — NOVA na v3.0
+
+> **Consome:** pool periférico da Etapa 5 + preços históricos. **Produz:** carteira final de ações aprovadas.
+
+Esta etapa é a principal inovação da v3.0. O raciocínio em uma frase:
+
+> *A MST diz ONDE olhar (ações descorrelacionadas). Os Filtros de Alpha dizem QUANDO comprar (ações com convicção direcional). Juntos, eles combinam diversificação genuína com timing de mercado.*
+
+#### 2.6B.1 Filtro de Momentum (Simples e Robusto)
+
+**Regra:** entre as Top N ações do pool periférico, o robô só compra aquelas cujo **preço de fechamento está acima da Média Móvel Simples de L dias (SMA_L)**.
+
+$$\text{Compra se: } P_t > \text{SMA}(L) = \frac{1}{L} \sum_{i=t-L+1}^{t} P_i$$
+
+Se a ação é periférica mas o preço está **abaixo** da SMA, o robô a descarta naquele mês — independentemente de quão periférica ela seja. Estar na periferia sem tendência de alta é diversificação sem direção.
+
+**Parâmetro L (comprimento da SMA):** é o único grau de liberdade deste filtro. Será calibrado no in-sample testando 4 valores:
+
+| L (dias) | Equivalência | Característica |
+|---|---|---|
+| 50 | ~2,5 meses | Reativo, mais sensível a reversões de curto prazo |
+| 100 | ~5 meses | Balanço entre reatividade e estabilidade |
+| 150 | ~7 meses | Tendência de médio prazo |
+| 200 | ~10 meses | Clássico de longo prazo, usado pela indústria |
+
+**Sustentação acadêmica — por que isso NÃO é overfitting.** O momentum é a **anomalia mais documentada e persistente em finanças**:
+
+- **Jegadeesh & Titman (1993):** demonstraram que ações que subiram nos últimos 3-12 meses tendem a continuar subindo nos próximos 3-12 meses. Publicado no *Journal of Finance*, replicado em dezenas de mercados.
+- **Asness, Moskowitz & Pedersen (2013):** confirmaram o efeito de momentum em ações, moedas, commodities e bonds, em 8 mercados e 40 anos de dados. "Value and Momentum Everywhere", *Journal of Finance*.
+- **Fama & French (2012):** incluíram momentum como fator de risco nos modelos de precificação, reconhecendo que a anomalia persiste.
+
+Usar SMA como proxy de momentum não é um modelo complexo — é um filtro binário (acima/abaixo). A única escolha é L, testada em 4 valores com in-sample/out-of-sample. **Comparar isso com um modelo de ML com 200 features seria desproporcional.**
+
+**Interpretação econômica:** ações periféricas na MST são guiadas por fatores idiossincráticos (não sistêmicos). Quando esses fatores estão gerando retorno positivo (preço acima da SMA), a ação tem momentum idiossincrático — e a decorrelação da MST protege esse momentum de ser cancelado por choques de mercado.
+
+**Analogia para Data Science:** é como ter um bom feature set (MST seleciona features descorrelacionadas) e depois aplicar um threshold simples (SMA como decision boundary). O threshold não é aprendido dos dados — é um corte natural (acima/abaixo da média móvel).
+
+#### 2.6B.2 Filtro de Machine Learning (Preditivo — Opcional/Complementar)
+
+> ⚠️ **Este filtro é opcional.** Só entra na versão final se demonstrar melhoria sobre o Momentum puro no in-sample. Os critérios do Itaú são explícitos: *"complexidade sem justificação é fator negativo"*. Se o Momentum sozinho resolver, ML seria over-engineering.
+
+**Objetivo:** treinar um classificador leve para prever se o retorno dos próximos K pregões (K = 5 ou 10) de uma ação periférica será **positivo ou negativo**. Usado como gatilho final de compra.
+
+**Modelo:** Random Forest Classifier ou XGBoost, com complexidade deliberadamente limitada:
+- `max_depth ≤ 5` (árvores rasas, sem memorizar o treino)
+- `n_estimators ≤ 100`
+- `min_samples_leaf ≥ 10`
+
+**Features (todas backward-looking — zero look-ahead):**
+
+| Feature | Descrição | Fonte |
+|---|---|---|
+| `farness_score` | Posição na periferia da MST | `farness_completa.parquet` |
+| `sma_ratio_50` | Preço / SMA(50) | `precos_ajustados.parquet` |
+| `sma_ratio_200` | Preço / SMA(200) | `precos_ajustados.parquet` |
+| `vol_21d` | Volatilidade rolante de 21 dias | `retornos_log.parquet` |
+| `volume_ratio` | Volume atual / mediana 63 dias | `volume_financeiro.parquet` |
+| `rsi_14` | RSI de 14 dias | Calculado dos retornos |
+| `ret_5d` | Retorno dos últimos 5 dias | `retornos_log.parquet` |
+| `ret_21d` | Retorno dos últimos 21 dias | `retornos_log.parquet` |
+| `ret_63d` | Retorno dos últimos 63 dias | `retornos_log.parquet` |
+
+**Disciplina de treinamento (CRÍTICO para anti-overfitting):**
+
+Duas abordagens serão testadas e comparadas:
+
+1. **Walk-forward validation:** treinar com todos os dados até o mês `t`, prever o mês `t+1`. A cada mês, o modelo é retreinado com os dados novos. Imita o que faríamos em produção real.
+
+2. **Single-train-and-freeze:** treinar uma única vez no in-sample (2011-2018), congelar o modelo, e aplicá-lo sem alteração no out-of-sample (2019-2026). Mais simples e mais fácil de defender contra acusação de overfitting.
+
+**Análise de feature importance:** se o modelo depender majoritariamente das features de momentum (`sma_ratio_50`, `sma_ratio_200`, `ret_5d/21d/63d`), isso **confirma** que o Momentum Filter sozinho é suficiente — e o ML não agrega. Nesse caso, aplicamos a Navalha de Occam: descartamos o ML e ficamos com o filtro mais simples. **Isso é um resultado legítimo e defensável, não uma falha.**
+
+#### 2.6B.3 Arquitetura em Cascata — Como os Filtros Interagem
+
+Os filtros operam em **cascata sequencial**, cada um reduzindo o universo:
+
+```
+80 ações do universo mensal
+       ↓
+Etapa 5: MST + Farness → Top N periféricas (N = 15-20)
+       ↓  "Filtro de Universo" — WHERE to look
+Etapa 5B.1: Momentum (P > SMA_L) → M ações aprovadas (M ≤ N)
+       ↓  "Filtro de Alpha" — WHEN to buy
+Etapa 5B.2: ML (opcional, retorno previsto > 0) → M' ações (M' ≤ M)
+       ↓  "Filtro de Precisão" — refinamento opcional
+Etapa 5: Alocação equal-weight entre M' ações
+       ↓
+Etapa 6: Filtro de Regime → ajuste de exposição total (ações ↔ CDI)
+       ↓  "Filtro de Proteção" — HOW MUCH to expose
+Backtest
+```
+
+**Regra para meses "vazios":** se em um mês nenhuma ação do pool periférico passar no Filtro de Momentum, o robô **aloca 100% no CDI**. Se apenas 3 ações passarem, aloca ~33% em cada e coloca os ~1% restantes em CDI (sem fração residual relevante). Isso é uma feature, não um bug:
+
+> *Se o mercado não oferece ações periféricas em tendência de alta, o robô prefere esperar em segurança. Isso é consistente com a tese: diversificação + momentum = comprar com convicção descorrelacionada.*
+
+**Impacto no turnover.** O turnover de 67% do MVP vem de compras e vendas sem convicção — a ação entra porque ficou periférica e sai no mês seguinte. Com o Filtro de Momentum:
+
+1. **Menos compras:** ações periféricas em queda não entram (filtro de entrada).
+2. **Menos vendas:** ações que já estão na carteira e ainda estão acima da SMA permanecem (filtro de saída implícito).
+3. **Estimativa:** a ser verificada no backtest, mas o efeito esperado é redução de 67% para algo na faixa de 30-50%.
+
+#### 2.6B.4 Safeguards Anti-Overfitting (Para a Banca)
+
+Este é o argumento de defesa mais importante do projeto na v3.0:
+
+| Safeguard | Como implementado |
+|---|---|
+| **Momentum não é fitted** | É um filtro binário (acima/abaixo da SMA). O único parâmetro é L, testado em 4 valores pré-definidos. |
+| **ML capped em complexidade** | max_depth ≤ 5, n_estimators ≤ 100. Walk-forward validation ou freeze após in-sample. |
+| **Cascata testável por camadas** | Cada filtro (MST, Momentum, Regime) é avaliado isoladamente e em combinação. A contribuição marginal de cada camada é medida. |
+| **In-sample / out-of-sample rigoroso** | Parâmetros (L, N, percentis do regime) calibrados em 2011-2018 e travados. Aplicados cegamente em 2019-2026. |
+| **Reportamos TODAS as variantes** | Não só a vencedora. Grid completo Pool × SMA publicado. |
+| **Controles sem grafo mantidos** | "Menor correlação média" e "Menor beta" da Parte 2.5.4 são testados com e sem Momentum. |
+| **Navalha de Occam aplicada** | Se o ML não agrega sobre o Momentum, fica de fora. Se o Momentum não agrega sobre o MVP, reportamos honestamente. |
 
 ### 2.7 Etapa 6: Filtro de Regime
 
@@ -641,12 +780,17 @@ Para cada rebalanceamento t de Mai/2011 a Jul/2026 (183 meses):
   1. Ler as 80 ações elegíveis em t          → universo_mensal.parquet
   2. Recortar 63 pregões anteriores a t      → retornos_log.parquet
   3. Covariância Ledoit-Wolf → correlação → distância → MST
-  4. Calcular métrica de periferia → ranking → Top 10
-  5. Filtro de Regime: distância média da MST vs. threshold
-     5a. Acima  → 10% em cada ação (100% exposto)
-     5b. Abaixo → reduzir exposição, restante no CDI  → cdi_diario.parquet
-  6. Apurar retorno da carteira até o rebalanceamento seguinte → precos_ajustados.parquet
-  7. Descontar custos de transação sobre o turnover efetivo
+  4. Calcular Farness → ranking → Pool Top N periféricas
+  5. FILTROS DE ALPHA (v3.0):
+     5a. Momentum: manter apenas ações com Preço > SMA(L)
+     5b. (Opcional) ML: manter apenas ações com retorno previsto > 0
+     → M ações aprovadas
+  6. Alocação: equal-weight entre as M aprovadas (resto em CDI)
+  7. Filtro de Regime: distância média da MST vs. threshold
+     7a. Acima  → manter alocação (100% exposto em ações aprovadas)
+     7b. Abaixo → reduzir exposição, restante no CDI → cdi_diario.parquet
+  8. Apurar retorno da carteira até o rebalanceamento seguinte → precos_ajustados.parquet
+  9. Descontar custos de transação sobre o turnover efetivo
 ```
 
 **Período.** Os dados começam em 03/01/2011; os primeiros 63 pregões são consumidos pela primeira janela. O primeiro rebalanceamento possível é **02/05/2011** e o último mês completo é **julho de 2026** — **183 meses (15,2 anos)**. A v1.3 propunha começar em Mar/2013; com os dados que temos, começar em Mai/2011 ganha quase 2 anos de amostra e inclui o ciclo de colapso das *ex-*queridinhas (OGX, PDG) que hoje está no universo.
@@ -743,8 +887,12 @@ O último merece destaque: comparar contra **carteiras aleatórias de 10 ações
 | 9 | Deduplicação de classes | Com e sem | Quanto a decisão da Parte 2.2.3 muda o resultado? |
 | 10 | **Séries mortas** | Com e sem as 6 empresas encerradas | Qual o tamanho real do survivorship bias residual? |
 | 11 | Sub-períodos | 2011-2015, 2016-2020, 2021-2026 | O efeito é estável no tempo ou vem de um período só? |
+| 12 | **Comprimento da SMA (v3.0)** | L = 50, 100, 150, 200 dias | Qual SMA captura melhor o momentum periférico? |
+| 13 | **Tamanho do Pool pré-Alpha (v3.0)** | Top 10, 15, 20, 25 | Quantas candidatas alimentam os Filtros de Alpha? |
+| 14 | **Camadas isoladas (v3.0)** | MVP puro / +Regime / +Momentum / +Cascata completa | Qual a contribuição marginal de cada filtro? |
+| 15 | **ML vs. Momentum (v3.0)** | Momentum puro / ML puro / Momentum+ML / Walk-forward vs. freeze | O ML agrega sobre o Momentum? (Navalha de Occam) |
 
-Os itens **3, 4, 5 e 10** são os que geram argumento de defesa mais forte. Se o tempo apertar, são os últimos a cortar.
+Os itens **3, 4, 5, 10 e 14** são os que geram argumento de defesa mais forte. Se o tempo apertar, são os últimos a cortar. O item **14** é novo e essencial: mostra a contribuição marginal de cada camada da cascata.
 
 ---
 
@@ -788,18 +936,20 @@ O uso de IA deve estar integrado ao relatório, mas precisa ser **específico e 
 | **Auditoria de dados** | A IA testou 317 tickers da B3 e **descobriu que renomeações não são buraco de dados**, derrubando uma premissa errada do próprio plano | Claude Code |
 | **Detecção de bug de dados** | A IA identificou as **68 datas de cotação fantasma** que zeravam a elegibilidade de 9 rebalanceamentos, e propôs o calendário reconstruído | Claude Code |
 | **Revisão crítica de modelagem** | A IA demonstrou empiricamente que **Betweenness Centrality é degenerada em árvores** (35-48 empates em zero), invalidando a regra de seleção original antes de qualquer backtest | Claude Code |
-| **Código do pipeline** | Scripts 01 a 05 de coleta, limpeza e validação | Claude Code |
+| **Diagnóstico do MVP e arquitetura em cascata (v3.0)** | Após o MVP revelar Sharpe −0,21, a IA **diagnosticou que a seleção topológica pura não gera alpha** e propôs a reformulação: MST como Filtro de Universo + Filtros de Alpha (Momentum/ML) como camada preditiva. Mapeou a arquitetura técnica e os safeguards anti-overfitting | Gemini |
+| **Código do pipeline** | Scripts 01 a 07 de coleta, limpeza, validação e backtest | Claude Code |
 | **Visualização** | Código para MST comparativa e gráficos de performance | Gemini / Claude |
 | **Identidade do robô** | Geração da imagem do Nexus a partir do conceito de grafos | Gemini (imagem) |
 | **Estruturação do relatório** | Organização das 5 páginas priorizando visual | Gemini / Claude |
 
 ### 5.3 O Que Mostrar no Relatório
 
-Os três achados em **negrito** acima são o material mais forte que temos, porque são casos em que a IA **mudou o rumo do projeto**, não apenas acelerou a digitação:
+Os quatro achados em **negrito** acima são o material mais forte que temos, porque são casos em que a IA **mudou o rumo do projeto**, não apenas acelerou a digitação:
 
 1. *"Pedimos à IA que validasse nossa premissa de survivorship bias. Ela testou 317 tickers e mostrou que estávamos errados: renomeações preservam o histórico. Recuperamos 47 casos que dávamos como perdidos."*
 2. *"A IA encontrou 68 datas de feriado com cotação espúria que faziam nosso universo colapsar de 80 para 4 ações em todo mês de janeiro."*
 3. *"Antes de rodar o backtest, a IA provou que a métrica central da nossa tese (Betweenness) empata 41 das 80 ações em zero, o que tornaria a seleção um sorteio. Trocamos a métrica."*
+4. *"O MVP confirmou Sharpe −0,21. A IA diagnosticou que a seleção topológica pura identifica ONDE olhar mas não QUANDO comprar, e propôs a arquitetura em cascata com Filtros de Alpha (Momentum + ML), transformando a MST de seletor final em filtro de universo."*
 
 **Menção de limitação da IA (obrigatório para não parecer propaganda):** a primeira validação de dados, feita com apoio de IA, usou o ticker `SOUZ3` — que não existe. O código real da Souza Cruz é `CRUZ3`. Esse erro levou a equipe a concluir prematuramente que estaria restrita a sobreviventes, e só foi corrigido numa segunda rodada com verificação empírica ticker a ticker. **Lição: IA generativa alucina identificadores com confiança, e nenhum código de ativo deve entrar no pipeline sem teste automático de existência.**
 
@@ -820,11 +970,11 @@ Essa admissão é valiosa — mostra uso maduro em vez de deslumbramento.
 
 | Página | Conteúdo | Peso |
 |---|---|---|
-| **1** | **Identidade + Conceito.** Logo, nome, explicação. Hipótese em 2-3 frases (versão endurecida: bater o CDI). Diagrama do pipeline. | Robô (5%) + Conceito (20%) |
-| **2** | **Modelagem.** MST visual: uma ação central vs. uma periférica. Regras de seleção e alocação em fluxograma. Menção à métrica de periferia escolhida e por quê. | Modelagem (20%) |
-| **3** | **Backtest e Resultados.** Retorno acumulado (Nexus vs. CDI vs. BOVA11). Tabela de métricas. Duas MSTs (calma vs. crise). Box de tratamento de vieses com os números concretos. | Backtest (15%) + Análise (15%) |
-| **4** | **Análise Crítica + IA.** Distribuição das carteiras aleatórias. Sensibilidade. Os 3 achados em que a IA mudou o projeto + a limitação do `SOUZ3`. | Análise (15%) + IA (15%) |
-| **5** | **Conclusão e Próximos Passos.** Limitações. Evoluções: Mutual Information no lugar de Pearson, PMFG no lugar de MST, outros mercados. | Conclusão (10%) |
+| **1** | **Identidade + Conceito.** Logo, nome, explicação. Hipótese em 2-3 frases (versão endurecida: bater o CDI). Diagrama do pipeline em cascata (MST → Alpha → Regime). | Robô (5%) + Conceito (20%) |
+| **2** | **Modelagem.** Diagrama da cascata de 3 filtros como elemento central: MST (ONDE olhar) → Momentum (QUANDO comprar) → Regime (QUANTO expor). MST visual: uma ação central vs. uma periférica. Menção à Farness e ao Momentum com sustentação acadêmica. | Modelagem (20%) |
+| **3** | **Backtest e Resultados.** Retorno acumulado (Nexus Cascata vs. MVP vs. CDI vs. BOVA11). Tabela de métricas. Tabela de contribuição marginal (4 versões). Box de tratamento de vieses. | Backtest (15%) + Análise (15%) |
+| **4** | **Análise Crítica + IA.** Heatmap Pool × SMA. Distribuição das carteiras aleatórias. Os 4 achados em que a IA mudou o projeto (incluindo diagnóstico do MVP) + limitação do `SOUZ3`. | Análise (15%) + IA (15%) |
+| **5** | **Conclusão e Próximos Passos.** Limitações. Evoluções: Mutual Information, PMFG, ML mais sofisticado, outros mercados. | Conclusão (10%) |
 
 ---
 
@@ -833,15 +983,17 @@ Essa admissão é valiosa — mostra uso maduro em vez de deslumbramento.
 | Período | Entrega | Status |
 |---|---|---|
 | **~06/ago** | **Dados base.** Universo, preços, volume, CDI, benchmarks, validação e relatório de qualidade. | ✅ **CONCLUÍDO** |
-| **06-07/ago** | **Resolver a métrica de periferia (Parte 2.5).** Testar as 7 candidatas + os 2 controles sem grafo. Escolher e justificar. **Bloqueia todo o resto.** | 🔴 Próximo |
-| **07-09/ago** | **MVP do backtest.** Loop ponta a ponta: universo → correlação Ledoit-Wolf → MST → periferia → Top 10 equal-weight → apuração com custos. Sem filtro de regime ainda. | Pendente |
-| **09-11/ago** | **Filtro de regime + benchmarks completos.** Percentil calibrado no in-sample. Carteiras aleatórias. Equal-weight do universo. | Pendente |
-| **10-12/ago** | **Testes de robustez.** Prioridade nos itens 3, 4, 5 e 10 da Parte 3.5. | Pendente |
-| **11-14/ago** | **Relatório e visuais** *(em paralelo)*. MSTs comparativas, imagem do robô, textos curtos. | Pendente |
+| **06-07/ago** | **Resolver a métrica de periferia (Parte 2.5).** Testar as 7 candidatas + os 2 controles sem grafo. Escolher e justificar. | ✅ **CONCLUÍDO** (Farness cravada) |
+| **07-10/ago** | **MVP do backtest.** Loop ponta a ponta: universo → Ledoit-Wolf → MST → Farness → Top 10 equal-weight → apuração com custos. | ✅ **CONCLUÍDO** (Sharpe −0,21) |
+| **10-11/ago** | **Diagnóstico do MVP.** Análise dos resultados negativos. Decisão de reformular para arquitetura em cascata. | ✅ **CONCLUÍDO** |
+| **12-13/ago** | **Filtros de Alpha (v3.0).** Implementar Momentum, calibrar L e Pool no in-sample. Grid Pool × SMA. | 🔴 **EM ANDAMENTO** |
+| **11-13/ago** | **Filtro de Regime.** Escada de degraus, calibrar percentis no in-sample. | 🔴 **EM ANDAMENTO** |
+| **13-14/ago** | **Out-of-sample cego + teste de camadas.** Aplicar parâmetros travados. Comparar 4 versões. | Pendente |
+| **11-14/ago** | **Relatório e visuais** *(em paralelo)*. Diagrama de cascata, MSTs comparativas, heatmap, identidade. | Em andamento |
 | **15-16/ago** | **Revisão fina.** < 750 palavras, estética 16:9, checagem de anonimato. | Pendente |
 | **17/ago** | **Buffer + entrega.** | — |
 
-**Risco de cronograma:** a Parte 2.5 é bloqueante. Se em 07/ago a métrica não estiver decidida, adotar a opção 2 (comprimento da aresta de ligação) por ser a mais simples de implementar e defender, e seguir para o MVP.
+**Risco de cronograma:** os Filtros de Alpha são a nova prioridade. Se em 13/ago o Momentum não estiver calibrado, usar L=200 (valor padrão da indústria) e Pool=20 como fallback, e seguir para o out-of-sample.
 
 ---
 
@@ -868,9 +1020,11 @@ Essa admissão é valiosa — mostra uso maduro em vez de deslumbramento.
 | **Nenhuma métrica de periferia bate os controles sem grafo** | Média | Alto | Reportar honestamente: a contribuição do grafo foi interpretabilidade e visualização. Manter a MST como ferramenta de diagnóstico de regime, que funciona muito bem (0,13 → 0,595). |
 | **Nexus perde do CDI** | **Alta** | Médio | Provável para qualquer long-only de ações no período. Enquadrar como achado: "o custo de oportunidade da renda variável brasileira em 2011-2026". Mostrar Sharpe por sub-período — pode ser positivo em 2016-2020. |
 | Nexus perde do equal-weight do universo | Média | Alto | Significa que a seleção não agrega. Reportar e investigar em quais regimes ela agrega. |
-| Turnover alto destrói o retorno | Média | Médio | Já temos sensibilidade a custo planejada. Se for o caso, testar rebalanceamento trimestral. |
+| Turnover alto destrói o retorno | Média | Médio | Filtros de Alpha devem reduzir de 67% para ~30-50%. Se não, testar rebalanceamento trimestral. |
 | Concentração setorial acidental | Média | Médio | Medir; se extrema, testar variante com teto por setor. |
 | MST instável mês a mês | Baixa | Médio | Testar janela de 126 dias. Reportar estabilidade temporal. |
-| Tempo insuficiente para o relatório | Média | Alto | Priorizar: (1) backtest funcional, (2) gráfico de retorno, (3) MSTs comparativas, (4) visual. Simplificar o filtro de regime a um único threshold se necessário. |
+| **Filtros de Alpha introduzem complexidade (v3.0)** | Média | Médio | Momentum é anomalia documentada há 30 anos (Jegadeesh & Titman). ML é opcional e capped em complexidade. A cascata é testável por camadas isoladas. Os critérios do Itaú são explícitos: "complexidade sem justificação é fator negativo" — por isso cada camada tem justificativa acadêmica independente. |
+| **Momentum não melhora o Sharpe no in-sample (v3.0)** | Média | Médio | Reportar honestamente: "testamos e a anomalia de momentum não se somou à seleção topológica no Brasil 2011-2026". Manter MVP + Regime como versão final. Resultado nulo bem documentado > maquiagem. |
+| Tempo insuficiente para o relatório | Média | Alto | Priorizar: (1) backtest com Momentum funcional, (2) gráfico de retorno com 4 versões, (3) heatmap Pool × SMA, (4) visual. Se o ML não couber no tempo, descartá-lo (é opcional). |
 | ~~yfinance falha para tickers antigos~~ | — | — | ✅ **Resolvido.** 244 de 317 tickers obtidos, 6 séries mortas dentro do backtest. |
 | ~~Composição histórica do IBOV indisponível~~ | — | — | ✅ **Resolvido** por universo de liquidez, com 184 rebalanceamentos estáveis. |
