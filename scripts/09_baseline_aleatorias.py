@@ -183,7 +183,7 @@ def main():
 ## Visualização da Distribuição
 ![Histograma de Monte Carlo](../images/02_baseline_macacos_in_sample.png)
 """
-    doc_path = Path("docs") / "06_teste_monte_carlo_baselines.md"
+    doc_path = Path("docs") / "07_teste_monte_carlo_baselines.md"
     doc_path.write_text(relatorio_md, encoding="utf-8")
     
     print(f"[+] Relatório salvo em: {doc_path.resolve()}")
