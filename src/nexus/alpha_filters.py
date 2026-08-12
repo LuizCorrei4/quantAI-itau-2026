@@ -80,59 +80,52 @@ def filtro_momentum(precos_historicos: pd.DataFrame, candidatas: List[str], L: i
     return aprovadas
 
 
-def filtro_ml(features: pd.DataFrame, candidatas: List[str], modelo: Any) -> List[str]:
+def filtro_ml(features: pd.DataFrame, candidatas: List[str], artefato_modelo: dict) -> List[str]:
     """
     Filtro de Alpha Baseado em Machine Learning (Classificação de Probabilidade).
     
-    Este filtro utiliza um modelo de Machine Learning (como Random Forest ou XGBoost)
-    previamente treinado para prever a direcionalidade da ação. O modelo avalia as
-    características (features) atuais da ação e retorna a probabilidade dela ter
-    um retorno positivo nos próximos K dias.
-    
-    Se a probabilidade estimada de alta (classe 1) for maior que 50%, a ação é aprovada.
+    Este filtro utiliza um modelo de Machine Learning treinado para prever a direcionalidade.
     
     Args:
-        features (pd.DataFrame): DataFrame contendo as features (variáveis independentes)
-            calculadas no dia T-1 para todas as ações. O índice deve ser o ticker.
-            Exemplos de features: RSI, Volatilidade_21d, Distancia_MST, Razao_Preco_SMA200, etc.
+        features (pd.DataFrame): DataFrame contendo as features (calculadas no dia T-1).
+                                 Deve conter as colunas esperadas pelo modelo e índice = ticker.
         candidatas (List[str]): Lista com os tickers das ações candidatas vindas da MST.
-        modelo (Any): O objeto do modelo treinado (ex: sklearn RandomForestClassifier).
-            O modelo precisa expor o método `.predict()` ou `.predict_proba()`.
+        artefato_modelo (dict): Dicionário salvo pelo treinamento contendo 'modelo', 'scaler' e 'features'.
             
     Returns:
-        List[str]: Lista contendo os tickers aprovados pelo modelo de Machine Learning.
+        List[str]: Lista contendo os tickers aprovados.
     """
-    # 1. Filtramos as features para incluir apenas as ações que estão na lista de candidatas.
-    # Fazemos um .loc para pegar apenas as linhas (índice) correspondentes aos tickers.
+    modelo = artefato_modelo['modelo']
+    scaler = artefato_modelo['scaler']
+    colunas_treino = artefato_modelo['features']
+    
     try:
         features_candidatas = features.loc[candidatas]
     except KeyError as e:
-        # Se alguma ação da lista não estiver no dataset de features, isso previne que o código quebre.
         logging.error(f"Erro: Algumas candidatas não possuem features cadastradas. Detalhe: {e}")
         return []
     
-    # 2. Verificação de segurança: os dados não podem conter Nulos (NaN) para o ML não quebrar.
-    if features_candidatas.isnull().values.any():
-        # Em produção, você poderia fazer uma imputação (ex: preencher NAs com média).
-        # Aqui seremos conservadores: dropamos ações com dado faltando para evitar distorção.
-        features_candidatas = features_candidatas.dropna()
-        if features_candidatas.empty:
-            return []
-            
-    # 3. O modelo faz as previsões.
-    # Vamos assumir que o modelo é de classificação binária (0: cai, 1: sobe).
-    # Usamos o método `.predict()` que retorna a classe final prevista.
-    previsoes = modelo.predict(features_candidatas)
+    # Preencher Nulos pontuais como fizemos no treinamento
+    if 'farness_mst' in features_candidatas.columns:
+        features_candidatas['farness_mst'] = features_candidatas['farness_mst'].fillna(1.0)
+        
+    features_candidatas = features_candidatas.dropna()
+    if features_candidatas.empty:
+        return []
+        
+    # Garante que passamos apenas as colunas exatas na ordem exata do treino
+    X = features_candidatas[colunas_treino]
     
-    # 4. Criamos uma série com os resultados.
-    # O índice será o ticker (vindo do DataFrame de features) e o valor será a previsão (0 ou 1).
+    # Aplica o Scaler (se existir)
+    if scaler is not None:
+        X_scaled = scaler.transform(X)
+    else:
+        X_scaled = X
+        
+    previsoes = modelo.predict(X_scaled)
+    
     resultado_series = pd.Series(data=previsoes, index=features_candidatas.index)
-    
-    # 5. Aplicamos o filtro.
-    # Mantemos apenas os tickers cuja previsão é igual a 1 (retorno positivo).
     aprovadas = resultado_series[resultado_series == 1].index.tolist()
-    
-    # logging.info(f"Filtro ML: de {len(candidatas)} candidatas, {len(aprovadas)} foram aprovadas.")
     
     return aprovadas
 
