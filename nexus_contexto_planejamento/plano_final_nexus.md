@@ -663,7 +663,7 @@ Se a ação é periférica mas o preço está **abaixo** da SMA, o robô a desca
 - **Asness, Moskowitz & Pedersen (2013):** confirmaram o efeito de momentum em ações, moedas, commodities e bonds, em 8 mercados e 40 anos de dados. "Value and Momentum Everywhere", *Journal of Finance*.
 - **Fama & French (2012):** incluíram momentum como fator de risco nos modelos de precificação, reconhecendo que a anomalia persiste.
 
-Usar SMA como proxy de momentum não é um modelo complexo — é um filtro binário (acima/abaixo). A única escolha é L, testada em 4 valores com in-sample/out-of-sample. **Comparar isso com um modelo de ML com 200 features seria desproporcional.**
+Usar SMA como proxy de momentum não é um modelo complexo — é um filtro binário (acima/abaixo). A única escolha é L, testada em 4 valores com **validação cruzada temporal** dentro do in-sample (3 folds expansíveis — ver Parte 3.1.1). O L escolhido deve ser estável nos 3 folds, não apenas o melhor no período inteiro. **Comparar isso com um modelo de ML com 200 features seria desproporcional.**
 
 **Interpretação econômica:** ações periféricas na MST são guiadas por fatores idiossincráticos (não sistêmicos). Quando esses fatores estão gerando retorno positivo (preço acima da SMA), a ação tem momentum idiossincrático — e a decorrelação da MST protege esse momentum de ser cancelado por choques de mercado.
 
@@ -741,10 +741,11 @@ Este é o argumento de defesa mais importante do projeto na v3.0:
 | Safeguard | Como implementado |
 |---|---|
 | **Momentum não é fitted** | É um filtro binário (acima/abaixo da SMA). O único parâmetro é L, testado em 4 valores pré-definidos. |
+| **Validação cruzada temporal (v3.0)** | Parâmetros calibrados via 3 folds expansíveis dentro do in-sample (2011→2014/15/16 treinando, 2015-16/16-17/17-18 validando). Parâmetro escolhido deve ser estável nos 3 folds, não apenas o melhor no período inteiro. Ver Parte 3.1.1. |
 | **ML capped em complexidade** | max_depth ≤ 5, n_estimators ≤ 100. Walk-forward validation ou freeze após in-sample. |
 | **Cascata testável por camadas** | Cada filtro (MST, Momentum, Regime) é avaliado isoladamente e em combinação. A contribuição marginal de cada camada é medida. |
-| **In-sample / out-of-sample rigoroso** | Parâmetros (L, N, percentis do regime) calibrados em 2011-2018 e travados. Aplicados cegamente em 2019-2026. |
-| **Reportamos TODAS as variantes** | Não só a vencedora. Grid completo Pool × SMA publicado. |
+| **In-sample / out-of-sample rigoroso** | Parâmetros (L, N, percentis do regime) calibrados em 2011-2018 via CV temporal e travados. Aplicados cegamente em 2019-2026. |
+| **Reportamos TODAS as variantes** | Não só a vencedora. Grid completo Pool × SMA publicado, com resultado por fold. |
 | **Controles sem grafo mantidos** | "Menor correlação média" e "Menor beta" da Parte 2.5.4 são testados com e sem Momentum. |
 | **Navalha de Occam aplicada** | Se o ML não agrega sobre o Momentum, fica de fora. Se o Momentum não agrega sobre o MVP, reportamos honestamente. |
 
@@ -762,8 +763,8 @@ A MST informa não só posições relativas, mas o **estado geral do mercado**:
 **A métrica e a escolha do threshold:**
 - Monitoramos a **distância média normalizada** da MST mês a mês.
 - **Risco de overfitting:** escolher o threshold depois de ver o backtest inteiro invalida o modelo.
-- **Regra:** a métrica é *backward-looking* (só olha distâncias até `t−1`). O **percentil** (5%, 10% ou 15% histórico) é calibrado no **in-sample** e depois **fixado e aplicado cegamente** no out-of-sample.
-- **Transparência:** relatamos **todas** as alternativas testadas e seus resultados no in-sample, e mostramos se a escolha sobreviveu no out-of-sample.
+- **Regra:** a métrica é *backward-looking* (só olha distâncias até `t−1`). O **percentil** (5%, 10% ou 15% histórico) é calibrado no **in-sample via validação cruzada temporal** (mesmos 3 folds da Parte 3.1.1) e depois **fixado e aplicado cegamente** no out-of-sample. O percentil escolhido deve ser estável nos 3 folds — se cada fold elege um percentil diferente, a escada de regime é frágil e devemos reportar isso.
+- **Transparência:** relatamos **todas** as alternativas testadas e seus resultados **por fold e no in-sample inteiro**, e mostramos se a escolha sobreviveu no out-of-sample.
 - **Defesa ativa:** distância média abaixo do limiar → cortar exposição em ações (para 50% ou 20%) e alocar o restante no CDI.
 - **Retomada:** distância volta a subir acima do limiar → restaurar 100%.
 
@@ -799,10 +800,33 @@ Para cada rebalanceamento t de Mai/2011 a Jul/2026 (183 meses):
 
 | Período | Intervalo | Meses | Serve para |
 |---|---|---|---|
-| **In-sample** | Mai/2011 – Dez/2018 | 92 | Escolher métrica de periferia e percentil do filtro de regime |
+| **In-sample** | Mai/2011 – Dez/2018 | 92 | Calibrar todos os parâmetros (L, Pool, percentis do regime) |
 | **Out-of-sample** | Jan/2019 – Jul/2026 | 91 | Teste cego, nenhum parâmetro tocado |
 
 Divisão de ~50/50. O out-of-sample contém a COVID (2020), o ciclo de alta da Selic (2021-2022) e o período recente — cenários bem distintos entre si, o que torna o teste exigente.
+
+#### 3.1.1 Validação Cruzada Temporal dentro do In-Sample (v3.0)
+
+**O problema.** O in-sample é usado para escolher o melhor L (SMA), Pool (Top N) e percentis do regime. São poucos parâmetros (~64 combinações no grid), mas selecionar o "melhor" por Sharpe no período inteiro é uma forma leve de otimização. Se o parâmetro vencedor funcionar por acaso num sub-período específico (ex: rally de 2016-2017), o out-of-sample pode decepcioná-lo.
+
+**A solução: validação cruzada temporal com janela expansível.** Em vez de olhar apenas o Sharpe no in-sample inteiro, dividimos o in-sample em **3 folds temporais** que simulam o que faríamos em tempo real — treinar com dados passados e validar no futuro imediato:
+
+```
+Fold 1: Treino 2011-2014  →  Validação 2015-2016  (24 meses)
+Fold 2: Treino 2011-2015  →  Validação 2016-2017  (24 meses)
+Fold 3: Treino 2011-2016  →  Validação 2017-2018  (24 meses)
+```
+
+**Critério de seleção de parâmetros:** o parâmetro escolhido (ex: L=200, Pool=20) deve ter Sharpe **consistente nos 3 folds**, não necessariamente o maior em cada um. Concretamente:
+
+1. Rodar o grid Pool × SMA em cada fold.
+2. Se L=200 é o melhor nos 3 folds → robustez forte, confiança alta.
+3. Se cada fold elege um L diferente → o sinal é fraco e deve ser reportado honestamente.
+4. Se uma **região** do heatmap (ex: L=100-200 e Pool=15-20) é consistentemente boa nos 3 folds → a escolha é insensível ao valor exato e o risco de overfitting é baixo.
+
+**Por que não criar um conjunto de validação separado.** Com 183 meses totais, um split em 3 partes (treino/validação/teste) deixaria cada conjunto com ~60 meses — curto demais para capturar ciclos de mercado completos. A CV temporal **dentro** do in-sample dá a mesma proteção sem sacrificar amostra no out-of-sample.
+
+**Analogia para Data Science:** é `TimeSeriesSplit` do scikit-learn. Cada fold respeita a ordem cronológica — nunca treina no futuro.
 
 ### 3.2 Benchmarks — E Por Que o CDI É o Alvo Real
 
@@ -867,7 +891,7 @@ O último merece destaque: comparar contra **carteiras aleatórias de 10 ações
 | **Cotação fantasma / calendário** | 68 datas de feriado removidas; calendário validado contra o Ibovespa. | ✅ Corrigido |
 | **Distorção de liquidez histórica** | Volume financeiro do preço bruto, nunca do ajustado. | ✅ Corrigido |
 | **Multicolinearidade de classes** | Uma classe por empresa (radical de 4 letras). | ✅ Corrigido |
-| **Sobre-otimização** | In-sample / out-of-sample de ~50/50. Sensibilidade em 4 eixos (Parte 3.5). Todas as variantes testadas reportadas, não só a vencedora. | ✅ Controlado |
+| **Sobre-otimização** | In-sample / out-of-sample de ~50/50. **Validação cruzada temporal** com 3 folds expansíveis dentro do in-sample (Parte 3.1.1). Sensibilidade em múltiplos eixos (Parte 3.5). Todas as variantes testadas reportadas, não só a vencedora. | ✅ Controlado |
 | **Custos de transação** | 0,05% por operação sobre o turnover em peso. Sensibilidade também a 0,10% e 0,20%. | ✅ Controlado |
 | **Transaction timing** | Decisão com dados até o fechamento do último pregão do mês anterior; execução no fechamento do 1º pregão do mês. | ✅ Controlado |
 | **Viés de seleção do próprio autor** | Controles sem grafo (correlação média, beta) e carteiras aleatórias como piso. | ✅ Planejado |
@@ -891,8 +915,9 @@ O último merece destaque: comparar contra **carteiras aleatórias de 10 ações
 | 13 | **Tamanho do Pool pré-Alpha (v3.0)** | Top 10, 15, 20, 25 | Quantas candidatas alimentam os Filtros de Alpha? |
 | 14 | **Camadas isoladas (v3.0)** | MVP puro / +Regime / +Momentum / +Cascata completa | Qual a contribuição marginal de cada filtro? |
 | 15 | **ML vs. Momentum (v3.0)** | Momentum puro / ML puro / Momentum+ML / Walk-forward vs. freeze | O ML agrega sobre o Momentum? (Navalha de Occam) |
+| 16 | **Estabilidade por CV temporal (v3.0)** | Melhor (L, Pool) em cada fold vs. in-sample inteiro | O parâmetro vencedor é estável ou depende do sub-período? |
 
-Os itens **3, 4, 5, 10 e 14** são os que geram argumento de defesa mais forte. Se o tempo apertar, são os últimos a cortar. O item **14** é novo e essencial: mostra a contribuição marginal de cada camada da cascata.
+Os itens **3, 4, 5, 10, 14 e 16** são os que geram argumento de defesa mais forte. Se o tempo apertar, são os últimos a cortar. O item **14** mostra contribuição marginal de cada camada; o **16** prova que os parâmetros não foram sobre-otimizados.
 
 ---
 

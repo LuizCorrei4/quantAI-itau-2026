@@ -21,15 +21,15 @@
 | Dia | Tarefa | Entrega |
 |---|---|---|
 | **12/ago (manhã)** | **Módulo de Filtros de Alpha:** Criar `src/nexus/alpha_filters.py` com: (a) `filtro_momentum(precos, universo, L)` → retorna mask booleano (Preço > SMA(L dias)) para cada ação do pool, (b) placeholder `filtro_ml(features, modelo)` para integração futura | `src/nexus/alpha_filters.py` |
-| **12/ago (tarde)** | **Backtest com Momentum (In-Sample):** Modificar `07_backtest.py` (ou criar `08_backtest_alpha.py`) para: (1) expandir pool periférico de Top 10 para **Top 20**, (2) aplicar Filtro de Momentum após Farness, (3) alocar equal-weight entre as que passaram — resto em CDI. Testar **L = 50, 100, 150, 200** no in-sample (2011-2018). Salvar tabela com Sharpe de cada L | `dados/resultados/serie_retornos_momentum_L*.parquet` + `docs/calibracao_momentum_insample.md` |
+| **12/ago (tarde)** | **Backtest com Momentum (CV Temporal):** Modificar `07_backtest.py` (ou criar `08_backtest_alpha.py`) para: (1) expandir pool periférico para **Top 20**, (2) aplicar Filtro de Momentum, (3) alocar equal-weight (resto em CDI). Testar **L = 50, 100, 150, 200** usando **Validação Cruzada Temporal** no in-sample (3 folds de validação: 2015-16, 2016-17, 2017-18). Salvar tabela com Sharpe por fold | `dados/resultados/serie_retornos_momentum_L*.parquet` + `docs/calibracao_momentum_cv.md` |
 | **13/ago (manhã)** | **Benchmark Equal-Weight 80 + 200 Carteiras Aleatórias:** Rodar com TODAS as 80 ações (sem seleção) para isolar efeito. 200 sorteios de 10 ações aleatórias. Comparar tanto o MVP puro quanto a versão com Momentum | `dados/resultados/serie_retornos_equalweight80.parquet` + `images/histograma_sharpe_aleatorias.png` |
-| **13/ago (tarde)** | **Grid de Sensibilidade Pool × SMA:** Combinações Top {10, 15, 20, 25} × SMA {50, 100, 150, 200}. Medir Sharpe e turnover de cada combinação no in-sample. Gerar heatmap | `images/heatmap_pool_sma.png` + tabela em `docs/` |
+| **13/ago (tarde)** | **Grid de Sensibilidade Pool × SMA:** Combinações Top {10, 15, 20, 25} × SMA {50, 100, 150, 200}. Medir Sharpe e turnover médio através dos 3 folds temporais. Gerar heatmaps | `images/heatmap_pool_sma_cv.png` + tabela em `docs/` |
 | **14/ago** | **Merge com Pessoa 2:** Integrar Filtro de Regime + Filtros de Alpha no backtest final. **Rodar out-of-sample (2019-2026) com parâmetros travados do in-sample, sem tocar em nada.** Gerar métricas finais | Branch `main` atualizada |
 
 > **Mudança de escopo vs. v2.0:** Na versão anterior, a Pessoa 1 faria sensibilidade de janela (42, 63, 126 pregões) e Top N. Esses testes foram **substituídos** pelo Grid Pool × SMA, que é mais informativo e cobre o mesmo espaço de parâmetros. Se sobrar tempo, a sensibilidade de janela entra como bônus.
 
 ### ⚠️ Regras Inegociáveis
-- **Travar L e Pool no in-sample (2011-2018).** NÃO olhar o out-of-sample antes de decidir.
+- **Travar L e Pool com base na CV Temporal (2011-2018).** O parâmetro escolhido deve ser estável nos 3 folds temporais. NÃO olhar o out-of-sample (2019-2026) antes de decidir.
 - **Reportar TODAS as combinações testadas**, não só a vencedora. A transparência pontua mais que o resultado.
 - Se o Momentum não melhorar o Sharpe no in-sample → reportar honestamente e manter o MVP puro como versão final. Resultado nulo bem documentado > maquiagem.
 
@@ -54,7 +54,7 @@ Ler obrigatoriamente o `docs/resumo_descomplicado_mvp.md` antes de começar.
 | Dia | Tarefa | Detalhes |
 |---|---|---|
 | **11-12/ago** | **Escada de Defesa:** Implementar a lógica de 3 níveis (🟢 100% ações / 🟡 50-50 / 🔴 20% ações + 80% CDI) usando a `dist_media_mst` como termômetro | Criar `src/nexus/regime.py` |
-| **12/ago** | **Calibração In-Sample (2011-2018):** Testar todas as combinações de percentis (5/10, 10/15, 10/20, 5/15) e anotar o Sharpe de CADA uma em tabela. Escolher a melhor e **travar** | Salvar tabela completa em `docs/calibracao_regime_insample.md` |
+| **12/ago** | **Calibração com CV Temporal (2011-2018):** Testar combinações de percentis (5/10, 10/15, 10/20, 5/15) usando **Validação Cruzada Temporal** (mesmos 3 folds da Pessoa 1). Anotar o Sharpe de cada uma por fold. Escolher a mais estável e **travar** | Salvar tabela completa em `docs/calibracao_regime_cv.md` |
 | **13/ago** | **Teste Cego Out-of-Sample (2019-2026):** Aplicar os percentis travados, sem alterar nada. Medir Sharpe, Drawdown e comparar com MVP puro | Script `08_backtest_com_regime.py` |
 | **13/ago** | **Quantificar atraso do filtro:** Em cada crise (2015, 2018, 2020, 2022), medir quantos meses o filtro demorou para reagir | Incluir no relatório |
 | **13/ago (extra)** | 🆕 **Teste de camadas isoladas:** Comparar **4 versões**: (a) MVP puro, (b) MVP + Regime, (c) MVP + Momentum, (d) **MVP + Momentum + Regime** (cascata completa). Medir Sharpe, Drawdown e turnover de cada. Essa tabela é OURO para o relatório — mostra a contribuição marginal de cada filtro | `docs/comparativo_camadas.md` |
