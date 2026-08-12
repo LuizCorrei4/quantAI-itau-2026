@@ -194,7 +194,7 @@ A matriz de calor nos traz uma constatação científica crítica sobre a nature
 
 > **Conclusão para a Banca:** O Filtro de Momentum exauriu seu teto estrutural. Eleva o nosso MVP de um Sharpe negativo para +{melhor_sharpe:.3f}, provando que a premissa fundamental de convicção direcional é válida. No entanto, sua simplicidade linear o impede matematicamente de ultrapassar o limiar de 95% de significância estatística de Alpha. **A Navalha de Occam falhou.** Torna-se estatisticamente justificada (e necessária) a introdução de uma camada não-linear de **Machine Learning** na arquitetura em cascata.
 """
-    doc_path = Path("docs") / "06_limite_do_momentum_grid_search.md"
+    doc_path = Path("docs") / "07_limite_do_momentum_grid_search.md"
     doc_path.write_text(relatorio_md, encoding="utf-8")
     
     print(f"[+] Relatório salvo em: {doc_path.resolve()}")
