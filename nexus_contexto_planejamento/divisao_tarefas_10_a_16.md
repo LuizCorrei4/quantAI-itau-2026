@@ -14,19 +14,15 @@
 - [x] Loop completo do backtest MVP em 183 meses (`scripts/07_backtest.py`)
 - [x] Série de retornos, carteiras mensais e farness completa salvos em `dados/resultados/`
 - [x] Gráficos automáticos e relatório `docs/resumo_backtest_mvp.md`
-- [x] Análise descomplicada com roteiro para a Pessoa 2 (`docs/resumo_descomplicado_mvp.md`)
+- [x] Análise descomplicada com roteiro para a Pessoa 2 
+### ✅ Concluído: Filtros de Alpha e Batalha Final (12-13/ago)
+- [x] **Módulo de Filtros de Alpha:** Implementação de `src/nexus/alpha_filters.py` com lógicas de Momentum e Machine Learning.
+- [x] **Calibração Momentum CV:** Validação cruzada (In-Sample 2015 a 2018) cravou a Média Móvel de 150 dias como a mais robusta (`scripts/10_grid_search_alpha.py`).
+- [x] **Teste de Macacos (Monte Carlo):** Threshold de 95% de p-value definido em **Sharpe 0.107** (`scripts/09_baseline_aleatorias.py`).
+- [x] **Feature Engineering & ML:** Regressão Logística sagrou-se vitoriosa contra Random Forest e XGBoost (`scripts/11_feature_engineering.py` e `12_train_ml.py`).
+- [x] **Batalha dos Filtros Final:** A arquitetura em Cascata (Momentum + ML) atingiu inacreditáveis **0.481 de Sharpe In-Sample**, derrotando a barreira dos macacos e se provando superior ao Momentum Puro (`08_backtest_alpha.py`). Merge na `main` efetuado com sucesso!
 
-### 🔴 Prioridade Máxima: Filtros de Alpha (12-14/ago)
-
-| Dia | Tarefa | Entrega |
-|---|---|---|
-| **12/ago (manhã)** | **Módulo de Filtros de Alpha:** Criar `src/nexus/alpha_filters.py` com: (a) `filtro_momentum(precos, universo, L)` → retorna mask booleano (Preço > SMA(L dias)) para cada ação do pool, (b) placeholder `filtro_ml(features, modelo)` para integração futura | `src/nexus/alpha_filters.py` |
-| **12/ago (tarde)** | **Backtest com Momentum (CV Temporal):** Modificar `07_backtest.py` (ou criar `08_backtest_alpha.py`) para: (1) expandir pool periférico para **Top 20**, (2) aplicar Filtro de Momentum, (3) alocar equal-weight (resto em CDI). Testar **L = 50, 100, 150, 200** usando **Validação Cruzada Temporal** no in-sample (3 folds de validação: 2015-16, 2016-17, 2017-18). Salvar tabela com Sharpe por fold | `dados/resultados/serie_retornos_momentum_L*.parquet` + `docs/calibracao_momentum_cv.md` |
-| **13/ago (manhã)** | **Benchmark Equal-Weight 80 + 200 Carteiras Aleatórias:** Rodar com TODAS as 80 ações (sem seleção) para isolar efeito. 200 sorteios de 10 ações aleatórias. Comparar tanto o MVP puro quanto a versão com Momentum | `dados/resultados/serie_retornos_equalweight80.parquet` + `images/histograma_sharpe_aleatorias.png` |
-| **13/ago (tarde)** | **Grid de Sensibilidade Pool × SMA:** Combinações Top {10, 15, 20, 25} × SMA {50, 100, 150, 200}. Medir Sharpe e turnover médio através dos 3 folds temporais. Gerar heatmaps | `images/heatmap_pool_sma_cv.png` + tabela em `docs/` |
-| **14/ago** | **Merge com Pessoa 2:** Integrar Filtro de Regime + Filtros de Alpha no backtest final. **Rodar out-of-sample (2019-2026) com parâmetros travados do in-sample, sem tocar em nada.** Gerar métricas finais | Branch `main` atualizada |
-
-> **Mudança de escopo vs. v2.0:** Na versão anterior, a Pessoa 1 faria sensibilidade de janela (42, 63, 126 pregões) e Top N. Esses testes foram **substituídos** pelo Grid Pool × SMA, que é mais informativo e cobre o mesmo espaço de parâmetros. Se sobrar tempo, a sensibilidade de janela entra como bônus.
+> **Transição:** O escopo da Pessoa 1 está oficialmente **encerrado**. A arquitetura Alpha comprovou seu valor. A bola agora está exclusivamente com a Pessoa 2 para a criação do Filtro de Regime.
 
 ### ⚠️ Regras Inegociáveis
 - **Travar L e Pool com base na CV Temporal (2011-2018).** O parâmetro escolhido deve ser estável nos 3 folds temporais. NÃO olhar o out-of-sample (2019-2026) antes de decidir.

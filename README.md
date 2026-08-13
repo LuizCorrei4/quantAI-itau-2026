@@ -83,8 +83,9 @@ A execução da estratégia pura de periferia (**Farness**, Top 10, Equal-Weight
 - **Max Drawdown:** **-48,2%** (Perda máxima concentrada em crashes sistêmicos)
 - **Turnover Médio:** **67,4% ao mês** (Giro elevado consumiu retorno via custos operacionais)
 
-> **Diagnóstico & Próximos Passos:** Esses resultados comprovam a necessidade de acoplar o **Filtro de Regime** (Etapa 6 do plano mestre), utilizando a contração da distância média da MST como sinalizador antecipado para migrar temporariamente o portfólio para o CDI.
-
+> **Solução Aplicada (Filtros de Alpha):** O diagnóstico provou a necessidade de gerar direção em vez de apenas descorrelação. A arquitetura evoluiu para uma **Cascata de Filtros**, onde a Regressão Logística atuando sobre os ativos previamente aprovados pela Média Móvel Simples (L=150) conseguiu reverter esse resultado para um **Sharpe positivo de 0.481 In-Sample**, superando com significância estatística nosso teste de Monte Carlo.
+>
+> **Próximos Passos:** O projeto encontra-se atualmente na transição para a **Pessoa 2**, que acoplará o **Filtro de Regime** utilizando a contração da distância média da MST como sinalizador antecipado de crises para migrar o portfólio para o CDI.
 ---
 
 ## 📑 Documentação de Referência
