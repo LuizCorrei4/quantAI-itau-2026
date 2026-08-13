@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Bebas+Neue&amp;display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; }
+a { color: inherit; }
+a:hover { opacity: 0.8; }
+</style>
+</helmet>
+
+<div style="width:100%; min-height:100vh; box-sizing:border-box; display:flex; justify-content:center; padding:80px 48px; background:{{bg}}; font-family:'Space Grotesk',sans-serif;">
+<div style="width:100%; max-width:1600px; display:flex; flex-direction:column; gap:64px;">
+
+  <div id="logo-lockup" style="display:flex; align-items:center; gap:48px; background:{{bg}}; padding:40px; border-radius:20px; width:fit-content;">
+    <div style="position:relative; width:170px; height:170px; flex-shrink:0;">
+      <div style="position:absolute; left:-25px; top:-25px; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle, {{accentGlow}} 0%, transparent 65%); opacity:0.35; z-index:0; pointer-events:none;"></div>
+      <div style="position:absolute; left:95px; top:94px; width:68px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(-36.03deg); z-index:1;"></div>
+      <div style="position:absolute; left:95px; top:94px; width:81.4px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(-137.49deg); z-index:1;"></div>
+      <div style="position:absolute; left:95px; top:94px; width:67.3px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(48.01deg); z-index:1;"></div>
+      <div style="position:absolute; left:35px; top:39px; width:90.55px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(96.34deg); z-index:1;"></div>
+      <div style="position:absolute; left:158px; top:14px; width:5px; height:5px; border-radius:50%; background:{{textSecondary}}; opacity:0.3; z-index:1;"></div>
+      <div style="position:absolute; left:12px; top:62px; width:4px; height:4px; border-radius:50%; background:{{textSecondary}}; opacity:0.25; z-index:1;"></div>
+      <div style="position:absolute; left:150px; top:160px; width:5px; height:5px; border-radius:50%; background:{{textSecondary}}; opacity:0.3; z-index:1;"></div>
+      <div style="position:absolute; left:60px; top:8px; width:4px; height:4px; border-radius:50%; background:{{textSecondary}}; opacity:0.25; z-index:1;"></div>
+      <div style="position:absolute; left:82px; top:82px; width:26px; height:26px; border-radius:50%; background:{{centralNode}}; box-shadow:inset 0 0 8px rgba(0,0,0,0.5); z-index:2;"></div>
+      <div style="position:absolute; left:143px; top:48px; width:14px; height:14px; border-radius:50%; background:{{textSecondary}}; opacity:0.6; z-index:2;"></div>
+      <div style="position:absolute; left:25px; top:30px; width:20px; height:20px; border-radius:50%; background:{{accent}}; box-shadow:0 0 20px 3px {{accentGlow}}, 0 0 6px 1px {{accent}}; z-index:2;"></div>
+      <div style="position:absolute; left:133px; top:138px; width:14px; height:14px; border-radius:50%; background:{{textSecondary}}; opacity:0.6; z-index:2;"></div>
+      <div style="position:absolute; left:13px; top:118px; width:24px; height:24px; border-radius:50%; background:{{accent}}; box-shadow:0 0 24px 4px {{accentGlow}}, 0 0 6px 1px {{accent}}; z-index:2;"></div>
+    </div>
+    <div>
+      <div style="font-size: 96px; font-weight: 700; letter-spacing: 6px; color: {{textPrimary}}; line-height: 1; font-family: Times New Roman">NEXUS</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:15px; letter-spacing:3px; text-transform:uppercase; color:{{accent}}; margin-top:14px; margin-left:4px;">Rede de correlação dinâmica</div>
+      
+      
+    </div>
+  </div>
+
+  <div style="height:1px; background:{{edgeColor}};"></div>
+
+  <div id="color-palette" style="background:{{bg}}; padding:24px; border-radius:16px;">
+    <div style="font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:3px; text-transform:uppercase; color:{{textSecondary}}; margin-bottom:20px;">Paleta de Cores</div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+      <sc-for list="{{palette}}" as="item" hint-placeholder-count="6">
+        <div style="position:relative; background:{{item.chipBg}}; border:{{item.borderCss}}; border-radius:14px; padding:18px 20px; height:150px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between;">
+          <sc-if value="{{item.isEdge}}" hint-placeholder-val="{{false}}">
+            <div style="position:absolute; left:10%; right:10%; top:50%; height:2px; background:{{item.lineColor}};"></div>
+          </sc-if>
+          <div style="position:relative; z-index:1;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600; color:{{item.textColor}};">{{item.name}}</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:{{item.textColor}}; opacity:0.75; margin-top:4px;">{{item.role}}</div>
+          </div>
+          <div style="position:relative; z-index:1; font-family:'JetBrains Mono',monospace; font-size:12px; color:{{item.textColor}}; opacity:0.9; word-break:break-all;">{{item.code}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:3px; text-transform:uppercase; color:{{textSecondary}}; margin-bottom:20px;">Tipografia</div>
+    <div style="display:flex; gap:24px;">
+      <div style="flex:1; background:{{bg2}}; border-radius:16px; padding:32px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:88px; color:{{textPrimary}}; line-height:1;">Aa</div>
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:20px; color:{{textPrimary}}; letter-spacing:1px;">Bebas Neue</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:{{textSecondary}};">Wordmark, logotipo</div>
+      </div>
+      <div style="flex:1; background:{{bg2}}; border-radius:16px; padding:32px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:88px; font-weight:700; color:{{textPrimary}}; line-height:1;">Aa</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600; color:{{textPrimary}};">Space Grotesk</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:{{textSecondary}};">Títulos, destaques</div>
+      </div>
+      <div style="flex:1; background:{{bg2}}; border-radius:16px; padding:32px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:88px; font-weight:600; color:{{textPrimary}}; line-height:1;">Aa</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:600; color:{{textPrimary}};">JetBrains Mono</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:{{textSecondary}};">Dados, métricas, legendas, código</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:3px; text-transform:uppercase; color:{{textSecondary}}; margin-bottom:20px;">Racional</div>
+    <div style="max-width:1150px; display:flex; flex-direction:column; gap:16px; font-size:19px; line-height:1.7; color:{{textPrimary}};">
+      <div>Nexus mapeia a rede de correlação entre ações do Ibovespa: cada nó é uma ação, cada aresta é a força da correlação entre duas ações. Nós centrais concentram conexões — ações que se movem com o mercado. Nós periféricos têm poucas conexões — ações com comportamento próprio, a fonte real de diversificação.</div>
+      <div style="color:{{textSecondary}};">A identidade traduz essa estrutura diretamente. Fundo escuro representa o mercado como pano de fundo. O nó central fica opaco e sombreado — sistêmico, evitado pela estratégia. Os nós periféricos brilham na cor de destaque — são as ações selecionadas em cada rebalanceamento. Arestas translúcidas mostram conexões fracas por design: é ali que mora a diversificação genuína.</div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:24px;">
+    <div style="width:160px; height:160px; border-radius:28px; background:{{bg2}}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <div style="position:relative; width:170px; height:170px; transform:scale(0.55);">
+        <div style="position:absolute; left:95px; top:94px; width:68px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(-36.03deg); z-index:1;"></div>
+        <div style="position:absolute; left:95px; top:94px; width:81.4px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(-137.49deg); z-index:1;"></div>
+        <div style="position:absolute; left:95px; top:94px; width:67.3px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(48.01deg); z-index:1;"></div>
+        <div style="position:absolute; left:35px; top:39px; width:90.55px; height:2px; background:{{edgeColor}}; transform-origin:left center; transform:rotate(96.34deg); z-index:1;"></div>
+        <div style="position:absolute; left:82px; top:82px; width:26px; height:26px; border-radius:50%; background:{{centralNode}}; box-shadow:inset 0 0 8px rgba(0,0,0,0.5); z-index:2;"></div>
+        <div style="position:absolute; left:143px; top:48px; width:14px; height:14px; border-radius:50%; background:{{textSecondary}}; opacity:0.6; z-index:2;"></div>
+        <div style="position:absolute; left:25px; top:30px; width:20px; height:20px; border-radius:50%; background:{{accent}}; box-shadow:0 0 20px 3px {{accentGlow}}, 0 0 6px 1px {{accent}}; z-index:2;"></div>
+        <div style="position:absolute; left:133px; top:138px; width:14px; height:14px; border-radius:50%; background:{{textSecondary}}; opacity:0.6; z-index:2;"></div>
+        <div style="position:absolute; left:13px; top:118px; width:24px; height:24px; border-radius:50%; background:{{accent}}; box-shadow:0 0 24px 4px {{accentGlow}}, 0 0 6px 1px {{accent}}; z-index:2;"></div>
+      </div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:{{textSecondary}};">Ícone / Avatar</div>
+  </div>
+
+  <div style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:2px; color:{{textSecondary}}; opacity:0.6;">DESAFIO QUANT AI ITAÚ ASSET 2026 — IDENTIDADE VISUAL DO NEXUS</div>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;accentColor&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#3DFFA0&quot;, &quot;options&quot;: [&quot;#3DFFA0&quot;, &quot;#FFD447&quot;], &quot;tsType&quot;: &quot;string&quot;},
+  &quot;bgTone&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;navy&quot;, &quot;options&quot;: [&quot;navy&quot;, &quot;preto&quot;], &quot;tsType&quot;: &quot;string&quot;}
+}">
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accentColor ?? '#3DFFA0';
+    const tone = this.props.bgTone ?? 'navy';
+    const bg = tone === 'preto' ? 'oklch(0.15 0.006 250)' : 'oklch(0.18 0.032 256)';
+    const bg2 = tone === 'preto' ? 'oklch(0.19 0.008 250)' : 'oklch(0.23 0.036 256)';
+    const centralNode = 'oklch(0.42 0.02 256)';
+    const edgeColor = 'oklch(0.65 0.01 256 / 0.35)';
+    const textPrimary = 'oklch(0.95 0.004 256)';
+    const textSecondary = 'oklch(0.62 0.012 256)';
+    const accentGlow = accent + 'aa';
+    const border = '1px solid oklch(1 0 0 / 0.08)';
+
+    const palette = [
+      { name: 'Fundo Primário', role: 'Base das telas', chipBg: bg, code: bg, textColor: textPrimary, borderCss: border, isEdge: false },
+      { name: 'Fundo Secundário', role: 'Cards e painéis', chipBg: bg2, code: bg2, textColor: textPrimary, borderCss: border, isEdge: false },
+      { name: 'Nó Periférico', role: 'Ações selecionadas', chipBg: accent, code: accent, textColor: '#0A0E14', borderCss: 'none', isEdge: false },
+      { name: 'Nó Central', role: 'Ações sistêmicas', chipBg: centralNode, code: centralNode, textColor: textPrimary, borderCss: 'none', isEdge: false },
+      { name: 'Aresta', role: 'Correlação entre ações', chipBg: bg2, code: edgeColor, textColor: textSecondary, borderCss: border, isEdge: true, lineColor: edgeColor },
+      { name: 'Texto Primário', role: 'Tipografia sobre fundo escuro', chipBg: textPrimary, code: textPrimary, textColor: '#0A0E14', borderCss: 'none', isEdge: false }
+    ];
+
+    return { bg, bg2, centralNode, edgeColor, textPrimary, textSecondary, accent, accentGlow, palette };
+  }
+}
+
+</script>
+</body>
+</html>
