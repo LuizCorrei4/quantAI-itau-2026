@@ -15,7 +15,7 @@
 ### 📈 Retorno Acumulado (Curva de Capital)
 ![Curva de Capital](../images/01_mvp_puro_retorno_acumulado.png)
 
-> **Contexto para a Banca:** O Ibovespa no período rendeu *menos* que o CDI puro. Nosso benchmark e obstáculo central sempre será superar o dinheiro 100% livre de risco de crédito (CDI).
+> **Contexto para a Banca (Jornada vs Destino):** Ao olhar o gráfico, pode parecer que o Nexus venceu o Ibovespa a maior parte do tempo. No entanto, o Retorno Acumulado na tabela avalia estritamente o *último dia de pregão*. O que o gráfico nos ensina é que o modelo puramente topológico sobe rápido em tempos de paz, mas a sua falta de defesa (filtro de regime e de tendência) faz com que as devoluções nas crises (drawdowns) sejam severas, destruindo no final da janela a rentabilidade conquistada ao longo dos anos. Nosso benchmark e obstáculo central sempre será superar o dinheiro 100% livre de risco de crédito (CDI).
 
 ### 📉 Drawdown (As dores da Carteira)
 ![Drawdown](../images/01_mvp_puro_drawdown.png)
