@@ -13,15 +13,21 @@
 ## 2. Gráficos Visuais de Desempenho
 
 ### 📈 Retorno Acumulado (Curva de Capital)
-![Curva de Capital](../images/01_mvp_puro_retorno_acumulado.png)
+<p align="center">
+  <img src="../images/01_mvp_puro_retorno_acumulado.png" width="680" alt="Curva de Capital" />
+</p>
 
 > **Contexto para a Banca (Jornada vs Destino):** Ao olhar o gráfico, pode parecer que o Nexus venceu o Ibovespa a maior parte do tempo. No entanto, o Retorno Acumulado na tabela avalia estritamente o *último dia de pregão*. O que o gráfico nos ensina é que o modelo puramente topológico sobe rápido em tempos de paz, mas a sua falta de defesa (filtro de regime e de tendência) faz com que as devoluções nas crises (drawdowns) sejam severas, destruindo no final da janela a rentabilidade conquistada ao longo dos anos. Nosso benchmark e obstáculo central sempre será superar o dinheiro 100% livre de risco de crédito (CDI).
 
 ### 📉 Drawdown (As dores da Carteira)
-![Drawdown](../images/01_mvp_puro_drawdown.png)
+<p align="center">
+  <img src="../images/01_mvp_puro_drawdown.png" width="680" alt="Drawdown" />
+</p>
 
 ### 🔄 Estabilidade (Giro Mensal)
-![Turnover](../images/01_mvp_puro_turnover_mensal.png)
+<p align="center">
+  <img src="../images/01_mvp_puro_turnover_mensal.png" width="680" alt="Turnover" />
+</p>
 > **Turnover médio mensal:** 67.4% 
 *(Isso significa que o robô muda aproximadamente 6.7 ações por mês, segurando posições por mais de um semestre. Uma prova que a MST é estável no longo prazo).*
 

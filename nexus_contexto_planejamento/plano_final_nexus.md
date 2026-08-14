@@ -2,18 +2,19 @@
 ## Grafo de Correlação Dinâmica e Centralidade de Rede para Seleção de Portfólio
 ### Desafio Quant AI Itaú Asset 2026
 
-> **Status:** Versão 3.0 — Arquitetura em Cascata com Filtros de Alpha (12/ago/2026). Este documento é o guia-mestre do projeto.
+> **Status:** Versão 4.0 — Veredito de Occam, CVM 175 e Integração Final (14/ago/2026). Este documento é o guia-mestre do projeto.
 > **Deadline oficial (edital):** 17/ago/2026. **Meta interna da equipe:** 16/ago, deixando o dia 17 como buffer.
 
-### Changelog (Versão 3.0) — Arquitetura em Cascata com Filtros de Alpha
-Esta versão reformula o papel da MST no pipeline: de **seletor final de compra** para **filtro de universo descorrelacionado**. O MVP (v2.0) provou que a topologia sozinha não gera alpha no Brasil (Sharpe −0,21). A v3.0 adiciona uma camada de **Filtros de Alpha** (Momentum e, opcionalmente, ML) entre a seleção topológica e a alocação. Mudanças materiais:
+### Changelog (Versão 4.0) — Veredito de Occam, CVM 175 e Foco no In-Sample
+Esta versão documenta as escolhas rigorosas que ditarão a configuração final de entrega do projeto e nossa postura em relação aos dados OOS.
 
-- **Mudança arquitetural central.** A MST + Farness seleciona o pool de candidatas descorrelacionadas (Top 15-20). Sobre esse pool, **Filtros de Alpha** (Preço > SMA e/ou classificador ML) decidem quais efetivamente comprar. A ação precisa ser periférica **E** mostrar convicção direcional.
-- **Filtro de Momentum adicionado.** Baseado na anomalia mais documentada em finanças (Jegadeesh & Titman, 1993). Parâmetro L (comprimento da SMA) calibrado no in-sample entre 4 valores.
-- **Filtro de ML (opcional/complementar).** Random Forest ou XGBoost com walk-forward validation. Complexidade limitada (max_depth ≤ 5). Marcado como opcional — só entra se melhorar sobre o Momentum puro, respeitando o princípio "Neutralidade quanto à complexidade" dos critérios do Itaú.
-- **Alocação adaptativa.** Se poucas ações passam em todos os filtros, a parcela não alocada vai para o CDI. Isso é feature, não bug: o robô prefere esperar a comprar sem convicção.
-- **Impacto esperado no turnover.** Os filtros de alpha exigem confirmações adicionais para compra/venda, o que deve reduzir drasticamente o turnover de 67% do MVP.
-- **Nova seção 2.6B (Etapa 5B)** com arquitetura técnica completa, anti-overfitting safeguards e mapeamento in-sample/out-of-sample.
+- **Machine Learning Preditivo Descartado:** Aplicamos a Navalha de Occam. Após corrigirmos o *Data Leakage* no modelo de ML implementando uma esteira rigorosa de *Walk-Forward*, o sinal de ML destruiu o alpha (Sharpe 0.053). O filtro de Momentum Puro com Média Móvel de 150 dias (Sharpe In-Sample 0.122) sagrou-se o Filtro Direcional oficial. 
+- **Enquadramento CVM 175 (Regra do CAP):** O portfólio agora obedece estritamente a regulação com um limite máximo de 10% de exposição por ativo, gerando realocação do excedente em CDI.
+- **Último Passo (Filtro de Regime Topológico):** O filtro de regime ainda precisa ser testado para avaliar sua posição na arquitetura: ele protegerá a carteira **ANTES** ou **DEPOIS** do Filtro de Momentum? Isso exigirá testes exaustivos na base *In-Sample*.
+- **Pacto de Integridade do Out-of-Sample:** Para garantirmos zero vazamento de dados, estamos absolutamente **proibidos** de testar qualquer coisa na base Out-Of-Sample (2019-2026) até estarmos completamente certos da arquitetura final pelo In-Sample. O acesso aos dados de Teste ocorrerá apenas no sábado/domingo como validação final cega.
+
+### Changelog (Versão 3.0) — Arquitetura em Cascata com Filtros de Alpha
+Esta versão reformula o papel da MST no pipeline: de seletor final de compra para **filtro de universo descorrelacionado**. Sobre esse pool periférico selecionado, Filtros de Alpha (como Momentum) determinam a convicção direcional reduzindo substancialmente o turnover excessivo da topologia pura.
 
 ### Changelog (Versão 2.0) — Revisão pós-coleta de dados
 Esta versão deixa de ser um plano hipotético sobre dados e passa a descrever **dados que existem**. Mudanças materiais:
@@ -803,7 +804,13 @@ Para cada rebalanceamento t de Mai/2011 a Jul/2026 (183 meses):
 | **In-sample** | Mai/2011 – Dez/2018 | 92 | Calibrar todos os parâmetros (L, Pool, percentis do regime) |
 | **Out-of-sample** | Jan/2019 – Jul/2026 | 91 | Teste cego, nenhum parâmetro tocado |
 
-Divisão de ~50/50. O out-of-sample contém a COVID (2020), o ciclo de alta da Selic (2021-2022) e o período recente — cenários bem distintos entre si, o que torna o teste exigente.
+**Por que a divisão ~50/50? (Equilíbrio de Regimes e Crises)**
+A escolha de particionar 15,2 anos quase exatamente pela metade não é arbitrária, mas sim uma decisão fundamentada na história macroeconômica brasileira. Essa linha de corte garante que tanto o período de calibração quanto o de teste cego contenham uma amostra robusta de crises severas e ciclos de alta *(bull markets)*:
+
+- **O que o In-Sample (2011-2018) aprende:** A crise macroeconômica brasileira, o colapso prolongado das commodities (ex: OGX), o forte *bull market* do ciclo de *impeachment* (2016-2017), o *crash* de evento único do *Joesley Day* (2017) e o estresse sistêmico da Greve dos Caminhoneiros (2018).
+- **O que o Out-Of-Sample (2019-2026) valida:** O *bull market* da Reforma da Previdência (2019), o choque global imediato dos *circuit breakers* da COVID-19 (2020), o ciclo inflacionário violento que levou a Selic de 2% a 13,75% (2021-2022) e a posterior estabilização.
+
+Se fizéssemos um corte 80/20 (padrão em Machine Learning), correríamos o risco de calibrar o modelo em um excesso de regimes e validar em uma janela curta, enviesada para um único comportamento de mercado. Com a proporção 50/50, provamos que a calibração no In-Sample não precisa ver o futuro (COVID, Selic a 13,75%) para sobreviver a ele.
 
 #### 3.1.1 Validação Cruzada Temporal dentro do In-Sample (v3.0)
 

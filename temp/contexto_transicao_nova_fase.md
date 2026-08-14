@@ -24,7 +24,7 @@ Se o modelo "viu o futuro", era esperado que a estratégia "ML Puro" apresentass
 ## O Plano de Ataque (Para a Próxima IA/Sessão)
 
 1. **Refatorar o Backtest com Walk-Forward / Expanding Window:**
-   O `08_backtest_alpha.py` não pode simplesmente carregar um modelo estático de `.joblib`. Para ser quantitativamente rigoroso no In-Sample, o backtest precisa simular o treinamento ao longo do tempo. Por exemplo: em 2015, o modelo só pode ser treinado com os dados de 2011 a 2014. Isso garantirá que o Sharpe gerado seja honesto.
+   O `08_backtest_alpha.py` não pode simplesmente carregar um modelo estático de `.joblib`. Para ser quantitativamente rigoroso no In-Sample, o backtest precisa simular o treinamento ao longo do tempo. Por exemplo: em 2015, o modelo só pode ser treinado com os dados de 2011 a 2014 (walk-forward). Isso garantirá que o Sharpe gerado seja honesto.
 
 2. **Enriquecer o Relatório da Batalha dos Filtros (`docs/08_batalha_dos_filtros_alpha.md`):**
    O documento atual está muito "seco". Precisamos adicionar contexto profundo sobre as **condições de teste e a composição da carteira**, incluindo:

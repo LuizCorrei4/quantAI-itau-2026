@@ -1,131 +1,145 @@
 """
-Módulo de Filtros de Alpha (Convicção Direcional) - Projeto Nexus
-Desafio Itaú Asset Quant AI 2026
+===============================================================================
+PROJETO NEXUS - DESAFIO ITAÚ ASSET QUANT AI 2026
+Módulo de Filtros de Alpha (Convicção Direcional - Camadas 2 e 3)
+Arquivo: src/nexus/alpha_filters.py
+===============================================================================
 
-Este módulo contém as lógicas de filtro aplicadas após a seleção topológica (MST).
-Enquanto a MST atua como um 'Filtro de Universo' para encontrar ações descorrelacionadas,
-estes filtros de Alpha atuam como 'Filtros Direcionais', garantindo que só compraremos 
-aquelas ações periféricas se elas também tiverem perspectiva de alta (seja por Momentum
-via Média Móvel ou previsão de Machine Learning).
+Este módulo contém as funções de filtragem direcional aplicadas sobre o pool de
+ações descorrelacionadas selecionadas na periferia da Minimum Spanning Tree (MST).
+
+ARQUITETURA EM CASCATA:
+-----------------------
+1. Camada 1 (MST): Filtro de Universo Descorrelacionado (Farness Topológica)
+2. Camada 2 (Momentum): Filtro Linear de Tendência (Preço > SMA_L)
+3. Camada 3 (Machine Learning): Filtro Probabilístico Não-Linear (Classificador LogReg)
+
+RIGOR METODOLÓGICO:
+-------------------
+- Todos os filtros consom estritamente informações conhecidas até o tempo T-1.
+- Imputações de dados ausentes utilizam a mediana da amostra local (evitando outliers).
+===============================================================================
 """
 
+import logging
+from typing import List, Dict, Any, Optional
 import pandas as pd
 import numpy as np
-from typing import List, Any
-import logging
 
-# Configuração básica de log para acompanharmos o que o filtro está fazendo
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+# Configuração de logging estruturado
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
-def filtro_momentum(precos_historicos: pd.DataFrame, candidatas: List[str], L: int) -> List[str]:
+
+def filtro_momentum(precos_historicos: pd.DataFrame, candidatas: List[str], L: int = 150) -> List[str]:
     """
-    Filtro de Alpha Baseado em Momentum (Tendência de Preço).
+    Filtro de Alpha Baseado em Tendência e Momentum Clássico (Camada 2).
     
-    A premissa deste filtro é a Navalha de Occam: comprar ativos apenas se eles
-    estiverem em tendência de alta. Como proxy para tendência, usamos a Média 
-    Móvel Simples (SMA - Simple Moving Average) de L dias.
-    
-    Se o preço atual do ativo estiver ACIMA da sua média histórica recente,
-    consideramos que ele tem "momentum positivo" e ele é aprovado.
-    
-    Args:
-        precos_historicos (pd.DataFrame): DataFrame contendo os preços ajustados das ações.
-            O índice deve ser de datas (cronológico) e as colunas os tickers (ex: 'PETR4.SA').
-            IMPORTANTE: Este DataFrame deve conter preços apenas até o dia T-1 para 
-            evitar "look-ahead bias" (viés de olhar o futuro) na tomada de decisão do dia T.
-        candidatas (List[str]): Lista com os tickers das ações que vieram do filtro de 
-            universo (a MST). Por exemplo: as Top 20 ações periféricas.
-        L (int): Comprimento (lookback window) da média móvel em dias úteis. 
-            Valores comuns: 50 (curto/médio prazo) ou 200 (longo prazo).
+    Princípio Econômico:
+        Baseado na premissa da persistência temporal de retornos (Jegadeesh & Titman, 1993)
+        e na Navalha de Occam: alocar capital exclusivamente em ativos cuja trajetória
+        recente demonstre tendência primária de alta.
+        
+    Regra de Decisão:
+        Aprova o ativo 'i' se e somente se:
+            Preco_Fechamento[T-1] > SMA_L(Preco_Fechamento)[T-1]
             
+    Args:
+        precos_historicos (pd.DataFrame): Matriz histórica de preços ajustados contendo
+            estritamente dados até T-1 (zero look-ahead bias). Linhas = datas, Colunas = tickers.
+        candidatas (List[str]): Lista de tickers das ações vindas do filtro topológico (MST).
+        L (int): Janela de observação em pregões úteis para a Média Móvel Simples (padrão = 150 dias).
+        
     Returns:
-        List[str]: Lista contendo apenas os tickers que passaram no filtro (Preço > SMA).
+        List[str]: Subconjunto contendo apenas os tickers dos ativos aprovados no critério de momentum.
     """
-    # 1. Filtramos o DataFrame de preços para conter apenas as colunas das ações candidatas.
-    # Isso economiza processamento e evita erros com ações que não nos interessam.
-    precos_candidatas = precos_historicos[candidatas]
-    
-    # 2. Verificação de segurança: temos dados suficientes para calcular a média de L dias?
-    # Se o DataFrame tiver menos linhas que L, não podemos calcular a média.
-    if len(precos_candidatas) < L:
-        logging.warning(f"Histórico insuficiente para calcular SMA({L}). Aprovando nenhuma ação por segurança.")
+    # 1. Filtra apenas as colunas das ações candidatas presentes no DataFrame
+    colunas_validas = [c for c in candidatas if c in precos_historicos.columns]
+    if len(colunas_validas) == 0:
         return []
+        
+    precos_candidatas = precos_historicos[colunas_validas]
     
-    # 3. Pegamos a "janela" exata dos últimos L dias disponíveis na base de histórico.
-    # Usamos .tail(L) que pega as últimas L linhas do DataFrame.
+    # 2. Verificação de suficiência amostral
+    if len(precos_candidatas) < L:
+        logging.warning(f"Histórico de preços ({len(precos_candidatas)} dias) inferior a L={L}. Nenhuma ação aprovada.")
+        return []
+        
+    # 3. Recorte dos últimos L pregões encerrados
     janela_l_dias = precos_candidatas.tail(L)
     
-    # 4. Calculamos a Média Móvel Simples (SMA).
-    # Como pegamos exatamente os últimos L dias, a SMA é simplesmente a média (mean) dessa janela.
-    # O resultado é uma pd.Series onde o índice é o Ticker e o valor é a Média.
-    sma_L = janela_l_dias.mean()
+    # 4. Cálculo da Média Móvel Simples (SMA)
+    sma_l = janela_l_dias.mean()
     
-    # 5. Pegamos o "Preço Atual".
-    # Como estamos no fim do mês T-1 tomando decisão para o mês T, o "preço atual"
-    # conhecido é o da última linha do histórico (o fechamento do último pregão).
+    # 5. Preço no último pregão disponível (T-1)
     preco_atual = janela_l_dias.iloc[-1]
     
-    # 6. Aplicamos a regra de decisão (O Filtro).
-    # Comparamos a série de preços atuais com a série da SMA.
-    # Isso gera uma pd.Series booleana (True se preco > sma, False caso contrário).
-    sinal_momentum = preco_atual > sma_L
-    
-    # 7. Filtramos a lista original.
-    # Selecionamos no índice da série (que são os Tickers) apenas aqueles onde o valor é True.
-    aprovadas = sinal_momentum[sinal_momentum].index.tolist()
-    
-    # Logamos o resultado para transparência no debug (opcional, mas bom pra checar sanidade).
-    # logging.info(f"Filtro Momentum (L={L}): de {len(candidatas)} candidatas, {len(aprovadas)} foram aprovadas.")
+    # 6. Aplicação da condição booleana: Preço > SMA
+    sinal_positivo = preco_atual > sma_l
+    aprovadas = sinal_positivo[sinal_positivo].index.tolist()
     
     return aprovadas
 
 
-def filtro_ml(features: pd.DataFrame, candidatas: List[str], artefato_modelo: dict) -> List[str]:
+def filtro_ml(features: pd.DataFrame, candidatas: List[str], artefato_modelo: Dict[str, Any]) -> List[str]:
     """
-    Filtro de Alpha Baseado em Machine Learning (Classificação de Probabilidade).
+    Filtro de Alpha Baseado em Classificação por Machine Learning (Camada 3).
     
-    Este filtro utiliza um modelo de Machine Learning treinado para prever a direcionalidade.
-    
+    Princípio de Modelagem:
+        Utiliza um modelo preditivo (ex: Regressão Logística treinada via Walk-Forward)
+        para estimar a probabilidade condicional de retorno positivo no mês subsequente [T, T+1].
+        
+    Regra de Decisão:
+        Aprova o ativo 'i' se a previsão do modelo for positiva (Classe = 1, ou P(Alta) > 0.50).
+        
     Args:
-        features (pd.DataFrame): DataFrame contendo as features (calculadas no dia T-1).
-                                 Deve conter as colunas esperadas pelo modelo e índice = ticker.
-        candidatas (List[str]): Lista com os tickers das ações candidatas vindas da MST.
-        artefato_modelo (dict): Dicionário salvo pelo treinamento contendo 'modelo', 'scaler' e 'features'.
-            
+        features (pd.DataFrame): Painel de features do mês atual T (calculadas em T-1).
+                                 Índice = tickers, Colunas = features técnicas e topológicas.
+        candidatas (List[str]): Lista de tickers das ações candidatas a serem filtradas.
+        artefato_modelo (Dict[str, Any]): Dicionário contendo o modelo treinado, o scaler ajustado
+                                          e a lista de colunas esperadas.
+                                          
     Returns:
-        List[str]: Lista contendo os tickers aprovados.
+        List[str]: Lista contendo os tickers das ações aprovadas pela inteligência do modelo.
     """
+    if artefato_modelo is None or len(candidatas) == 0:
+        return []
+        
     modelo = artefato_modelo['modelo']
     scaler = artefato_modelo['scaler']
     colunas_treino = artefato_modelo['features']
     
-    try:
-        features_candidatas = features.loc[candidatas]
-    except KeyError as e:
-        logging.error(f"Erro: Algumas candidatas não possuem features cadastradas. Detalhe: {e}")
+    # Filtra apenas as candidatas presentes no painel de features
+    tickers_presentes = [t for t in candidatas if t in features.index]
+    if len(tickers_presentes) == 0:
         return []
-    
-    # Preencher Nulos pontuais como fizemos no treinamento
-    if 'farness_mst' in features_candidatas.columns:
-        features_candidatas['farness_mst'] = features_candidatas['farness_mst'].fillna(1.0)
         
-    features_candidatas = features_candidatas.dropna()
+    features_candidatas = features.loc[tickers_presentes].copy()
+    
+    # Imputação prudencial de valores faltantes (usando mediana local em vez de 1.0)
+    if 'farness_mst' in features_candidatas.columns:
+        mediana_farness = features_candidatas['farness_mst'].median()
+        if pd.isna(mediana_farness):
+            mediana_farness = 100.0  # Valor médio típico na escala de farness da MST
+        features_candidatas['farness_mst'] = features_candidatas['farness_mst'].fillna(mediana_farness)
+        
+    features_candidatas = features_candidatas.dropna(subset=colunas_treino)
     if features_candidatas.empty:
         return []
         
-    # Garante que passamos apenas as colunas exatas na ordem exata do treino
+    # Extrai estritamente a matriz X nas colunas de treinamento
     X = features_candidatas[colunas_treino]
     
-    # Aplica o Scaler (se existir)
+    # Normalização Z-score com o scaler do modelo
     if scaler is not None:
         X_scaled = scaler.transform(X)
     else:
         X_scaled = X
         
+    # Predição de direção
     previsoes = modelo.predict(X_scaled)
     
-    resultado_series = pd.Series(data=previsoes, index=features_candidatas.index)
-    aprovadas = resultado_series[resultado_series == 1].index.tolist()
+    # Seleção dos ativos com previsão positiva (Target = 1)
+    series_pred = pd.Series(previsoes, index=features_candidatas.index)
+    aprovadas = series_pred[series_pred == 1].index.tolist()
     
     return aprovadas
-

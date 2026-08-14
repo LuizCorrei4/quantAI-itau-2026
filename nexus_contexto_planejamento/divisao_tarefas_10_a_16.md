@@ -19,47 +19,36 @@
 - [x] **Módulo de Filtros de Alpha:** Implementação de `src/nexus/alpha_filters.py` com lógicas de Momentum e Machine Learning.
 - [x] **Calibração Momentum CV:** Validação cruzada (In-Sample 2015 a 2018) cravou a Média Móvel de 150 dias como a mais robusta (`scripts/10_grid_search_alpha.py`).
 - [x] **Teste de Macacos (Monte Carlo):** Threshold de 95% de p-value definido em **Sharpe 0.107** (`scripts/09_baseline_aleatorias.py`).
-- [x] **Feature Engineering & ML:** Regressão Logística sagrou-se vitoriosa contra Random Forest e XGBoost (`scripts/11_feature_engineering.py` e `12_train_ml.py`).
-- [x] **Batalha dos Filtros Final:** A arquitetura em Cascata (Momentum + ML) atingiu inacreditáveis **0.481 de Sharpe In-Sample**, derrotando a barreira dos macacos e se provando superior ao Momentum Puro (`08_backtest_alpha.py`). Merge na `main` efetuado com sucesso!
+- [x] **Feature Engineering & ML:** O ML (Regressão Logística) foi testado adequadamente via `Walk-Forward Expanding Window` para evitar *Data Leakage*. (`scripts/11_feature_engineering.py` e `scripts/12_train_ml.py`).
+- [x] **Veredito de Occam & CVM 175:** O Momentum Puro (SMA 150) venceu a barreira dos macacos (Sharpe In-Sample de **0.122**) e superou o ML (Sharpe **0.053**). O modelo preditivo de ML foi **descartado** por princípio da parcimônia. Adicionamos a Regra de CAP de 10% de exposição por ativo (Resolução CVM 175).
+- [x] **Branch Mergeada:** Todo o código de alpha, auditoria e CVM foi consolidado em `main`.
 
-> **Transição:** O escopo da Pessoa 1 está oficialmente **encerrado**. A arquitetura Alpha comprovou seu valor. A bola agora está exclusivamente com a Pessoa 2 para a criação do Filtro de Regime.
+> **Transição:** O escopo da Pessoa 1 está oficialmente **encerrado**. A arquitetura Alpha (Momentum Puro) comprovou seu valor. A bola agora está exclusivamente com a Pessoa 2 para a criação do Filtro de Regime Topológico.
 
 ### ⚠️ Regras Inegociáveis
-- **Travar L e Pool com base na CV Temporal (2011-2018).** O parâmetro escolhido deve ser estável nos 3 folds temporais. NÃO olhar o out-of-sample (2019-2026) antes de decidir.
-- **Reportar TODAS as combinações testadas**, não só a vencedora. A transparência pontua mais que o resultado.
-- Se o Momentum não melhorar o Sharpe no in-sample → reportar honestamente e manter o MVP puro como versão final. Resultado nulo bem documentado > maquiagem.
+- **Testes Exaustivos In-Sample:** O filtro de regime e a nova ordem de operações (antes vs. depois do momentum) devem ser testados **à exaustão** apenas nos dados In-Sample (2011-2018).
+- **Proibido Olhar o Out-Of-Sample:** ZERO contato com o período Out-of-Sample (2019-2026) até termos certeza absoluta da nossa configuração.
+- **Janela de Teste OOS Restrita:** Só rodaremos os testes no Out-Of-Sample no sábado ou domingo (dia 15 ou 16), às vésperas da entrega, como teste cego definitivo.
 
 ---
 
 ## Pessoa 2: "Analista de Risco & Regime" 
-**Branch:** `feat/filtros-robustez`
+**Branch:** `feat/filtros-robustez` (a ser criada a partir da `main` recém-mergeada)
 
 ### Missão Central
-Implementar o **Filtro de Regime com escada de degraus** e calibrá-lo com rigor metodológico In-Sample/Out-of-Sample. A novidade é que agora o Filtro de Regime opera **sobre a carteira já filtrada pelo Momentum**, não sobre o MVP puro.
+O último desafio técnico: implementar e testar o **Filtro de Regime Topológico**.
+A grande dúvida que deve ser exaustivamente testada no **In-Sample**: Este filtro deve atuar **antes** ou **depois** do Filtro de Momentum? Qual arquitetura traz o melhor balanço risco-retorno no In-Sample?
 
-Ler obrigatoriamente o `docs/resumo_descomplicado_mvp.md` antes de começar.
-
-### Dados que já estão prontos para você
-- `dados/resultados/serie_retornos_nexus.parquet` — contém a coluna `dist_media_mst` (o termômetro do regime!)
-- `dados/resultados/farness_completa.parquet` — Farness das 80 ações, todos os meses
-- `src/nexus/mst.py` — função `calcular_distancia_media_mst()` pronta para importar
-- 🆕 `src/nexus/alpha_filters.py` — módulo dos Filtros de Alpha (assim que a Pessoa 1 entregar)
-
-### Cronograma
+### Cronograma de Ações Finais
 
 | Dia | Tarefa | Detalhes |
 |---|---|---|
-| **11-12/ago** | **Escada de Defesa:** Implementar a lógica de 3 níveis (🟢 100% ações / 🟡 50-50 / 🔴 20% ações + 80% CDI) usando a `dist_media_mst` como termômetro | Criar `src/nexus/regime.py` |
-| **12/ago** | **Calibração com CV Temporal (2011-2018):** Testar combinações de percentis (5/10, 10/15, 10/20, 5/15) usando **Validação Cruzada Temporal** (mesmos 3 folds da Pessoa 1). Anotar o Sharpe de cada uma por fold. Escolher a mais estável e **travar** | Salvar tabela completa em `docs/calibracao_regime_cv.md` |
-| **13/ago** | **Teste Cego Out-of-Sample (2019-2026):** Aplicar os percentis travados, sem alterar nada. Medir Sharpe, Drawdown e comparar com MVP puro | Script `08_backtest_com_regime.py` |
-| **13/ago** | **Quantificar atraso do filtro:** Em cada crise (2015, 2018, 2020, 2022), medir quantos meses o filtro demorou para reagir | Incluir no relatório |
-| **13/ago (extra)** | 🆕 **Teste de camadas isoladas:** Comparar **4 versões**: (a) MVP puro, (b) MVP + Regime, (c) MVP + Momentum, (d) **MVP + Momentum + Regime** (cascata completa). Medir Sharpe, Drawdown e turnover de cada. Essa tabela é OURO para o relatório — mostra a contribuição marginal de cada filtro | `docs/comparativo_camadas.md` |
-| **14/ago** | **Merge com Pessoa 1:** Integrar Momentum + Regime no backtest final. Rodar out-of-sample combinado com parâmetros travados | Branch `main` |
+| **14-15/ago** | **Testes Exaustivos In-Sample:** Criar a mecânica do filtro de regime (usando dist_media_mst como termômetro) e fazer dezenas de iterações no In-Sample (2011-2018) alternando a ordem (Momentum -> Regime vs Regime -> Momentum). | Encontrar a lógica ótima que não degrade o Sharpe de 0.122 do Momentum. |
+| **15-16/ago** | **Quebra de Vidro (Out-Of-Sample):** Somente quando tivermos certeza da estabilidade da configuração no In-Sample, abriremos a "caixa preta" do período Out-Of-Sample (2019-2026) para rodar o backtest cego final. | Se tudo der certo, essa rodada final sela o projeto técnico. |
+| **16/ago** | **Integração Relatório:** Enviar as métricas finais In-Sample e Out-Of-Sample para a Pessoa 3 embutir no PDF e diagramar. | `docs/comparativo_camadas.md` |
 
 ### Atenção Crítica
-- **NÃO** escolha os percentis olhando o out-of-sample. Isso é overfitting e a banca perceberá.
-- **REPORTE TODAS** as variantes testadas, não só a vencedora. Transparência vale mais pontos.
-- O teste de camadas isoladas (13/ago extra) é essencial para defender a arquitetura em cascata: se Momentum + Regime combinados forem melhores que cada um isolado, a tese da cascata está validada.
+- **NÃO DESTRUA O ALPHA:** O filtro de regime deve proteger a carteira sem diluir o *alpha* recém-conquistado do Momentum. O foco é mitigação de Drawdown extremo.
 
 ---
 
@@ -93,11 +82,11 @@ Esse diagrama é a nova "imagem-assinatura" do relatório, junto com as MSTs com
 
 | Dia | Atividade |
 |---|---|
-| **12/ago (noite)** | 🆕 **Quick sync:** Pessoa 1 mostra primeiros resultados do Momentum no in-sample. Verificar se os filtros produzem resultados sensatos antes de prosseguir. Decisão: o ML é necessário ou o Momentum já resolve? |
-| **13/ago (noite)** | 🆕 **Checkpoint de dados:** Pessoa 2 mostra tabela comparativa das 4 versões (MVP / +Regime / +Momentum / +Cascata). Pessoa 3 confirma que o diagrama de cascata está pronto |
-| **14/ago (noite)** | Merge das 3 branches em `main`. Pessoa 3 recebe os últimos gráficos e números |
-| **15/ago** | Revisão coletiva do PDF. Checar: anonimato total, 5 páginas exatas, < 750 palavras, gráficos legíveis |
-| **16/ago** | Buffer de emergência + submissão do PDF até 23h59 |
+| **14/ago (noite)** | **Merge de Alpha Finalizado.** Todo o modelo Veredito de Occam (Momentum Puro, Regras CVM) foi mergeado em `main`. |
+| **15/ago** | **Dia D do In-Sample:** Pessoa 2 roda testes exaustivos do Filtro de Regime no In-Sample. Decisão da Ordem (Antes/Depois de Momentum). Pessoa 3 adianta PDF com toda a base teórica e dados in-sample prontos. |
+| **16/ago (manhã)** | **Teste Cego Out-of-Sample:** Quebra do vidro! Backtest OOS rodado. Dados finais para o relatório. |
+| **16/ago (noite)** | Revisão do PDF: anonimato, 5 páginas exatas, limites CVM, análise de custo embutida. |
+| **17/ago** | Buffer final e submissão! |
 
 ---
 
