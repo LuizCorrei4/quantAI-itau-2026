@@ -1,0 +1,16 @@
+# Manifesto de Integridade — Dados Canônicos do Projeto Nexus
+# Gerado em: 2026-08-16T16:55:00-03:00
+# Vintage: 2026-08-10T20:26:08-03:00 (scripts 01-04)
+#
+# Estes hashes garantem que os parquets canônicos não foram alterados
+# desde o congelamento. Qualquer re-coleta de dados via yfinance/BCB
+# produzirá hashes diferentes e DEVE ser rejeitada pelos scripts de auditoria.
+#
+# Para verificar: sha256sum -c dados/CHECKSUMS.sha256
+
+a60ffdb739fbc51d68e0c7c0ea3ecba228a2c2cca041bd43495effabac9c4fa9  processados/precos_ajustados.parquet
+ea757ece4bc9d2cb56f6bb38321e7e07ad7c4b58ddef057a5a2f5164ad307929  processados/retornos_log.parquet
+5ae37acf9cdc427ec820fff6b8472ee6c4afe3e7a290cb7a4889a6e092c1587f  processados/universo_mensal.parquet
+17425850b79529b2e02743814a24a3e97e3a817034b1e94fe5ec14824d79238d  processados/cdi_diario.parquet
+04f30aa8bd5829386fe751ae275d5e722ee9d9e6ee72ddd219508dcb255430c1  processados/benchmarks.parquet
+b1bde76d5af24129d6e997bd6d8bb27a2f322222722c80a54ba820d3ae97ce07  processados/volume_financeiro.parquet

@@ -39,7 +39,10 @@ já publicados em docs/03 a docs/11 (ver TICKET-C07).
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
@@ -62,6 +65,73 @@ from .portfolio import (
 
 
 # =============================================================================
+# 0. VALIDAÇÃO DE INTEGRIDADE DOS DADOS CANÔNICOS
+# =============================================================================
+
+def _sha256(caminho: Path) -> str:
+    """Calcula SHA-256 de um arquivo em blocos (eficiente para arquivos grandes)."""
+    h = hashlib.sha256()
+    with open(caminho, "rb") as f:
+        for bloco in iter(lambda: f.read(1 << 20), b""):
+            h.update(bloco)
+    return h.hexdigest()
+
+
+def validar_integridade_dados(
+    bases_dir: Path | None = None,
+    parametros_path: Path | None = None,
+) -> None:
+    """
+    Verifica que os parquets canônicos não foram alterados desde o congelamento.
+
+    Lê os hashes esperados de ``parametros_travados.json`` (campo ``hash_sha256``)
+    e compara com os hashes reais dos arquivos em disco. Levanta RuntimeError
+    se qualquer arquivo divergir.
+
+    Se ``parametros_travados.json`` não contiver o campo ``hash_sha256``, a
+    validação é silenciosamente pulada (retrocompatibilidade).
+    """
+    if bases_dir is None:
+        bases_dir = config.PROCESSADOS
+    if parametros_path is None:
+        parametros_path = config.RAIZ / "parametros_travados.json"
+
+    if not parametros_path.exists():
+        return  # ambiente sem parametros_travados (ex: testes unitários)
+
+    with open(parametros_path) as f:
+        params = json.load(f)
+
+    hashes_esperados = params.get("hash_sha256")
+    if not hashes_esperados:
+        return  # versão antiga do JSON, sem hashes
+
+    erros = []
+    for nome, esperado in hashes_esperados.items():
+        caminho = bases_dir / nome
+        if not caminho.exists():
+            erros.append(f"  AUSENTE: {nome}")
+            continue
+        real = _sha256(caminho)
+        if real != esperado:
+            erros.append(
+                f"  DIVERGENTE: {nome}\n"
+                f"    esperado: {esperado}\n"
+                f"    real:     {real}"
+            )
+
+    if erros:
+        raise RuntimeError(
+            "INTEGRIDADE DOS DADOS VIOLADA!\n"
+            "Os parquets canônicos mudaram desde o congelamento.\n"
+            "Causas comuns: re-coleta via yfinance, edição manual, corrupção.\n\n"
+            + "\n".join(erros)
+            + "\n\nSe a mudança foi intencional, atualize hash_sha256 em "
+            "parametros_travados.json e dados/CHECKSUMS.sha256."
+        )
+
+
+# =============================================================================
 # 1. CARGA DE DADOS
 # =============================================================================
 
@@ -76,7 +146,12 @@ class Bases:
 
 
 def carregar_bases() -> Bases:
-    """Lê os painéis processados de `dados/processados/`."""
+    """Lê os painéis processados de `dados/processados/`.
+
+    Antes de carregar, valida os hashes SHA-256 dos parquets canônicos
+    contra os registrados em ``parametros_travados.json``.
+    """
+    validar_integridade_dados()
     return Bases(
         universo=pd.read_parquet(config.PROCESSADOS / "universo_mensal.parquet"),
         retornos=pd.read_parquet(config.PROCESSADOS / "retornos_log.parquet"),

@@ -7,6 +7,12 @@
   "regime_percentil": 10,
   "regime_exposicao_crise": 0.30,
   "regime_min_historico": 24,
+  "data_vintage": "2026-08-10T20:26:08-03:00",
+  "hash_sha256": {
+    "precos_ajustados.parquet": "a60ffdb739fbc51d68e0c7c0ea3ecba228a2c2cca041bd43495effabac9c4fa9",
+    "retornos_log.parquet": "ea757ece4bc9d2cb56f6bb38321e7e07ad7c4b58ddef057a5a2f5164ad307929",
+    "universo_mensal.parquet": "5ae37acf9cdc427ec820fff6b8472ee6c4afe3e7a290cb7a4889a6e092c1587f"
+  },
   "origem": "Pool=20 e SMA=150 vindos do grid in-sample (script 10, replicado no 18); regime percentil=10 escolhido pela calibracao in-sample do script 16 (melhor Sharpe entre 5/10/15/20). Nenhum dado posterior a 2018-12-31 foi consultado para fixar estes valores.",
-  "travado_em": "2026-08-15"
+  "travado_em": "2026-08-16"
 }
