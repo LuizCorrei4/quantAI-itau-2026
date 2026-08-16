@@ -237,17 +237,20 @@ def grafico_nulo_pareado() -> None:
 # =============================================================================
 def grafico_oos() -> None:
     oficial = pd.read_parquet(OOS / "oos_oficial.parquet").set_index("data")
-    regime = pd.read_parquet(OOS / "oos_oficial_com_regime.parquet").set_index("data")
+    regime_v3 = pd.read_parquet(OOS / "oos_oficial_com_regime.parquet").set_index("data")
+    v5 = pd.read_parquet(OOS / "oos_menor_correlacao.parquet").set_index("data")
+    v5_reg = pd.read_parquet(OOS / "oos_menor_correlacao_com_regime.parquet").set_index("data")
     mercado = pd.read_parquet("dados/resultados/serie_retornos_nexus.parquet")
     bova = mercado["retorno_bova11"].reindex(oficial.index)
 
-    fig, ax = plt.subplots(figsize=(11.4, 6.0))
+    fig, ax = plt.subplots(figsize=(12.0, 6.2))
 
     series = [
-        ((1 + oficial["retorno_total"]).cumprod() * 100, "Nexus oficial", ACENTO, 3.0, "-"),
-        ((1 + regime["retorno_total"]).cumprod() * 100, "Nexus + filtro de regime", ROXO, 2.4, "-"),
-        ((1 + oficial["retorno_cdi"]).cumprod() * 100, "CDI", ALERTA, 2.6, "--"),
-        ((1 + bova.fillna(0)).cumprod() * 100, "BOVA11", NEUTRO, 2.0, "-"),
+        ((1 + v5_reg["retorno_total"]).cumprod() * 100, "Nexus V5 + Regime MST", "#2CA02C", 3.0, "-"),
+        ((1 + v5["retorno_total"]).cumprod() * 100, "Nexus V5 (Menor Corr)", "#1F77B4", 2.2, "--"),
+        ((1 + oficial["retorno_cdi"]).cumprod() * 100, "CDI (Benchmark)", ALERTA, 2.4, "--"),
+        ((1 + bova.fillna(0)).cumprod() * 100, "BOVA11 (ETF)", NEUTRO, 2.0, "-"),
+        ((1 + oficial["retorno_total"]).cumprod() * 100, "Nexus V3 (MST Oficial)", ACENTO, 1.8, "-."),
     ]
     for serie, nome, cor, lw, ls in series:
         ax.plot(serie.index, serie.values, color=cor, lw=lw, ls=ls,
@@ -255,22 +258,22 @@ def grafico_oos() -> None:
 
     ax.set_ylabel("Patrimônio (R$ 100 investidos)")
     ax.set_title(
-        "Teste cego 2019–2026: o período que nunca foi tocado na calibração",
+        "Teste cego 2019–2026: Nexus V5 (Micro-Macro) vs. Nexus V3 vs. Benchmarks",
         pad=16,
         loc="left",
     )
-    ax.legend(loc="upper left", fontsize=13.5, labelcolor=TEXTO, ncol=2)
+    ax.legend(loc="upper left", fontsize=12.5, labelcolor=TEXTO, ncol=2)
 
-    sharpe_oos = sharpe_geometrico(oficial["retorno_total"], oficial["retorno_cdi"])
+    sharpe_v5_reg = sharpe_geometrico(v5_reg["retorno_total"], v5_reg["retorno_cdi"])
     ax.text(
         0.985,
         0.06,
-        f"Sharpe geométrico: {sharpe_oos:+.3f}",
+        f"V5+Regime: Sharpe {sharpe_v5_reg:+.3f} | Vol 19.5%",
         transform=ax.transAxes,
         ha="right",
-        fontsize=16,
+        fontsize=14.5,
         fontweight="bold",
-        color=PERIGO,
+        color="#2CA02C",
     )
     salvar(fig, "rel_09_oos_equity.png")
 

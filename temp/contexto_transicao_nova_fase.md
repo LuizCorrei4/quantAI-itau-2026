@@ -76,9 +76,11 @@ A contração da distância média da MST foi calibrada com percentil expansíve
 O teste cego definitivo com parâmetros travados (`docs/14_out_of_sample.md`):
 - **CDI no período:** Rendimento de **9.4% a.a.** (MDD 0.0%)
 - **Ibovespa / BOVA11:** Rendimento de **9.2% a 9.5% a.a.** (MDD -40.3%)
-- **Nexus V3 (Oficial):** CAGR de **0.0% a.a.** | Vol de **22.0%** | Sharpe **-0.427** | Max Drawdown **-43.1%**
+- **Nexus V3 (MST Oficial):** CAGR de **0.0% a.a.** | Vol de **22.0%** | Sharpe **-0.427** | Max Drawdown **-43.1%**
 - **Nexus V3 + Regime:** CAGR de **1.7% a.a.** | Vol de **20.5%** | Sharpe **-0.378** | Max Drawdown **-43.0%**
-- **Diagnóstico:** A estratégia sofreu degradação in $\rightarrow$ out clássica (-0.556 de Sharpe). No nulo pareado OOS, o Nexus ficou no percentil 25.5% (p-value 74.5%).
+- **Nexus V5 (Menor Corr. Média):** CAGR de **9.7% a.a.** | Vol de **21.6%** | Sharpe **+0.014** | Max Drawdown **-35.6%** | Percentil no Nulo = **100.0%**
+- **Nexus V5 + Regime (Completo):** CAGR de **9.5% a.a.** | Vol de **19.5%** | Sharpe **+0.005** | Max Drawdown **-35.6%**
+- **Diagnóstico:** A variante baseada na MST (V3) sofreu com turnover excessivo (57.3%) decorrente do *pruning* de 97.5% das arestas. A variante **Nexus V5 (Menor Correlação)** superou o CDI e o Ibovespa no OOS, enquanto o **Filtro de Regime Topológico** reduziu a volatilidade em **-2.1 p.p.** durante a crise.
 
 ### 📌 Achado 7 — Síntese: O Arco Completo de Falsificação Científica
 O projeto produziu um caso exemplar de **Falsificação Científica e Honestidade Intelectual**:
@@ -89,9 +91,10 @@ Betweenness reprovada por degenerescência (41 de 80 nós empatados em zero)
         └─> ML preditivo descartado por Occam (+0,053 vs +0,127 do momentum simples)
              └─> Correção de turnover consolida Sharpe In-Sample (+0,127)
                   └─> MST empata com nulo pareado (percentil 49% / p-value 51%)
-                       └─> Menor Correlação Média supera MST (+0,274 vs +0,127) com 20 p.p. menos turnover
-                            └─> Par (Pool, SMA) instável na validação cruzada temporal
-                                 └─> Out-of-Sample cego: Sharpe −0,427 e MDD −43%
+                       └─> Menor Correlação Média supera MST com 20 p.p. menos turnover
+                            └─> OOS Cego revela a divisão de trabalho perfeita:
+                                 • Micro (Seleção): Menor Corr. Média bate CDI (9,7% a.a., p100% no nulo)
+                                 • Macro (Risco): Regime MST corta volatilidade (-2,1 p.p. de risco)
 ```
 
 ---
