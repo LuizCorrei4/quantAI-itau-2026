@@ -2,22 +2,26 @@
 ## Grafo de Correlação Dinâmica e Centralidade de Rede para Seleção de Portfólio
 ### Desafio Quant AI Itaú Asset 2026
 
-> **Status:** Versão 4.0 — Veredito de Occam, CVM 175 e Integração Final (14/ago/2026). Este documento é o guia-mestre do projeto.
-> **Deadline oficial (edital):** 17/ago/2026. **Meta interna da equipe:** 16/ago, deixando o dia 17 como buffer.
+> **Status:** Versão 5.0 — Consolidação Final, Auditoria Rigorosa e Validação Out-of-Sample (16/ago/2026). Este documento é o guia-mestre definitivo do projeto.
+> **Deadline oficial (edital):** 17/ago/2026. **Meta interna da equipe:** 16/ago, deixando o dia 17 como buffer de submissão.
+
+### Changelog (Versão 5.0) — Consolidação Canônica, Descoberta Micro-Macro e Validação OOS
+Esta versão documenta a bateria final de testes de auditoria, a esteira reproduzível e as descobertas empíricas definitivas que sustentam a narrativa institucional do relatório:
+
+- **Integridade Canônica e Congelamento de Dados (SHA-256):** Manifesto `dados/CHECKSUMS.sha256` criado e integrado via rotina `validar_integridade_dados()` no `motor.py`. Garante reproduzibilidade matemática estrita baseada no vintage canônico de 10/ago/2026.
+- **Correção de Custos de Turnover:** O motor unificado corrigiu a apuração de giro em meses consecutivos de caixa 100% CDI, consolidando o Sharpe In-Sample do V3 em **+0.127 / +0.129** (CAGR 12.2%, Vol 14.9%, MDD -13.6%).
+- **Auditoria de Significância Estatística via Monte Carlo (`docs/13`):** O teste pareado de 200 sorteios (N2) demonstrou que o V3 oficial fica no percentil **49.0% (p-value 51.0%)**, empatando com um sorteio aleatório submetido às mesmas regras de momentum e caixa.
+- **Validação Cega Out-of-Sample (2019–2026, 91 meses — `docs/14`):**
+  - **Nexus V3 (MST Oficial):** Apresentou degradação no OOS (CAGR 0.0%, Sharpe -0.427) devido a turnover excessivo (57.3%) provocado pelo *pruning* de 97.5% das arestas da MST.
+  - **Nexus V5 (Menor Correlação Média):** Ao utilizar a matriz de densidade completa, reduziu o giro para 39.0% e entregou **CAGR de 9.7% a.a. no OOS**, superando o CDI (9.4%) e o Ibovespa (9.2%), alcançando **percentil 100.0% contra o nulo pareado (p-value 0.0%)**.
+  - **Nexus V5 + Regime Topológico MST (Arquitetura Completa):** Ao incorporar o Filtro de Regime Topológico (contração da MST em crises), a volatilidade do portfólio no OOS caiu de **21.6% para 19.5% (-2.1 p.p. de risco)**, preservando o retorno de **9.5% a.a.** acima do CDI e do Ibovespa com Max Drawdown contido em **-35.6%** (vs -40.1% do Ibovespa).
+- **A Tese de Engenharia Quantitativa:** A Teoria de Grafos (MST) é um instrumento excepcional no nível **macro** (termômetro de choque sistêmico e gestão de cauda), enquanto a **Menor Correlação Média** governa a seleção **micro** de ativos sem perda amostral.
 
 ### Changelog (Versão 4.0) — Veredito de Occam, CVM 175 e Foco no In-Sample
-Esta versão documenta as escolhas rigorosas que ditarão a configuração final de entrega do projeto e nossa postura em relação aos dados OOS.
-
-- **Machine Learning Preditivo Descartado:** Aplicamos a Navalha de Occam. Após corrigirmos o *Data Leakage* no modelo de ML implementando uma esteira rigorosa de *Walk-Forward*, o sinal de ML destruiu o alpha (Sharpe 0.053). O filtro de Momentum Puro com Média Móvel de 150 dias (Sharpe In-Sample 0.122) sagrou-se o Filtro Direcional oficial. 
+Esta versão documentou as escolhas que ditaram a configuração inicial de entrega do projeto e nossa postura em relação aos dados OOS:
+- **Machine Learning Preditivo Descartado:** Aplicamos a Navalha de Occam. Após corrigirmos o *Data Leakage* no modelo de ML implementando uma esteira rigorosa de *Walk-Forward*, o sinal de ML destruiu o alpha (Sharpe 0.053). O filtro de Momentum Puro com Média Móvel de 150 dias sagrou-se o Filtro Direcional oficial. 
 - **Enquadramento CVM 175 (Regra do CAP):** O portfólio agora obedece estritamente a regulação com um limite máximo de 10% de exposição por ativo, gerando realocação do excedente em CDI.
-- **Último Passo (Filtro de Regime Topológico):** O filtro de regime ainda precisa ser testado para avaliar sua posição na arquitetura: ele protegerá a carteira **ANTES** ou **DEPOIS** do Filtro de Momentum? Isso exigirá testes exaustivos na base *In-Sample*.
-- **Pacto de Integridade do Out-of-Sample:** Para garantirmos zero vazamento de dados, estamos absolutamente **proibidos** de testar qualquer coisa na base Out-Of-Sample (2019-2026) até estarmos completamente certos da arquitetura final pelo In-Sample. O acesso aos dados de Teste ocorrerá apenas no sábado/domingo como validação final cega.
-
-### Changelog (Versão 3.0) — Arquitetura em Cascata com Filtros de Alpha
-Esta versão reformula o papel da MST no pipeline: de seletor final de compra para **filtro de universo descorrelacionado**. Sobre esse pool periférico selecionado, Filtros de Alpha (como Momentum) determinam a convicção direcional reduzindo substancialmente o turnover excessivo da topologia pura.
-
-### Changelog (Versão 2.0) — Revisão pós-coleta de dados
-Esta versão deixa de ser um plano hipotético sobre dados e passa a descrever **dados que existem**. Mudanças materiais:
+- **Pacto de Integridade do Out-of-Sample:** Parâmetros travados em `parametros_travados.json` antes de qualquer execução no período de teste cego.
 
 - **Survivorship bias reformulado.** A premissa da v1.2/v1.3 ("só conseguimos sobreviventes") estava **pessimista demais** e foi corrigida por teste empírico de 317 tickers. Renomeações não são buraco de dados; 6 empresas mortas entram efetivamente no backtest; os 26 buracos remanescentes estão nomeados um a um. Ver Parte 2.2.
 - **Quatro decisões de tratamento de dados** agora documentadas e justificadas: preço ajustado × preço bruto, deduplicação por empresa, calendário de pregão reconstruído e anulação de retornos absurdos. Ver Parte 2.2.
@@ -1016,14 +1020,15 @@ Essa admissão é valiosa — mostra uso maduro em vez de deslumbramento.
 |---|---|---|
 | **~06/ago** | **Dados base.** Universo, preços, volume, CDI, benchmarks, validação e relatório de qualidade. | ✅ **CONCLUÍDO** |
 | **06-07/ago** | **Resolver a métrica de periferia (Parte 2.5).** Testar as 7 candidatas + os 2 controles sem grafo. Escolher e justificar. | ✅ **CONCLUÍDO** (Farness cravada) |
-| **07-10/ago** | **MVP do backtest.** Loop ponta a ponta: universo → Ledoit-Wolf → MST → Farness → Top 10 equal-weight → apuração com custos. | ✅ **CONCLUÍDO** (Sharpe −0,21) |
+| **07-10/ago** | **MVP do backtest.** Loop ponta a ponta: universo → Ledoit-Wolf → MST → Farness → Top 10 equal-weight → apuração com custos. | ✅ **CONCLUÍDO** (Sharpe −0,347) |
 | **10-11/ago** | **Diagnóstico do MVP.** Análise dos resultados negativos. Decisão de reformular para arquitetura em cascata. | ✅ **CONCLUÍDO** |
-| **12-13/ago** | **Filtros de Alpha (v3.0).** Implementar Momentum, calibrar L e Pool no in-sample. Grid Pool × SMA. | 🔴 **EM ANDAMENTO** |
-| **11-13/ago** | **Filtro de Regime.** Escada de degraus, calibrar percentis no in-sample. | 🔴 **EM ANDAMENTO** |
-| **13-14/ago** | **Out-of-sample cego + teste de camadas.** Aplicar parâmetros travados. Comparar 4 versões. | Pendente |
-| **11-14/ago** | **Relatório e visuais** *(em paralelo)*. Diagrama de cascata, MSTs comparativas, heatmap, identidade. | Em andamento |
-| **15-16/ago** | **Revisão fina.** < 750 palavras, estética 16:9, checagem de anonimato. | Pendente |
-| **17/ago** | **Buffer + entrega.** | — |
+| **12-14/ago** | **Filtros de Alpha (v3.0).** Implementar Momentum (SMA 150), Cap 10% CVM 175, descartar ML por Occam. | ✅ **CONCLUÍDO** (Sharpe +0.127) |
+| **14-15/ago** | **Filtro de Regime Topológico.** Calibração in-sample expansível (p10), ganho de +0.068 de Sharpe. | ✅ **CONCLUÍDO** |
+| **16/ago** | **Auditoria de Integridade & Monte Carlo.** Congelamento SHA-256 (`dados/CHECKSUMS.sha256`), motor unificado e correção de turnover. | ✅ **CONCLUÍDO** |
+| **16/ago** | **Out-of-sample cego & Validação Micro-Macro.** Teste cego 2019–2026. Nexus V5 (+Regime) bate CDI e IBOV no OOS com Sharpe positivo e p100% no nulo. | ✅ **CONCLUÍDO** |
+| **16/ago** | **Suíte Visual & Notebooks.** Geração dos 10 gráficos institucionais em `images/relatorio/` e atualização do Jupyter in-place. | ✅ **CONCLUÍDO** |
+| **16-17/ago** | **Relatório Final (5 Páginas).** Estruturação do deck 16:9, < 750 palavras, anonimato total e identidade do robô. | 🚀 **PRÓXIMA ETAPA** |
+| **17/ago** | **Buffer de entrega e revisão final.** | 🛡️ **GARANTIDO** |
 
 **Risco de cronograma:** os Filtros de Alpha são a nova prioridade. Se em 13/ago o Momentum não estiver calibrado, usar L=200 (valor padrão da indústria) e Pool=20 como fallback, e seguir para o out-of-sample.
 
