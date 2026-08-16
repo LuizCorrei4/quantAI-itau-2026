@@ -26,9 +26,9 @@ Folds com janela expansível, conforme a Parte 3.1.1 do plano-mestre:
 
 | Fold | Melhor no treino | Sharpe (treino) | Esse par na **validação** | Melhor na validação | Sharpe |
 |---|---|---|---|---|---|
-| Fold 1 | Pool=20, SMA=150 | -0.028 | -0.511 | Pool=10, SMA=50 | +0.028 |
-| Fold 2 | Pool=15, SMA=150 | -0.356 | +0.830 | Pool=10, SMA=50 | +0.866 |
-| Fold 3 | Pool=15, SMA=100 | -0.180 | +0.398 | Pool=20, SMA=150 | +0.760 |
+| Fold 1 | Pool=25, SMA=150 | +0.152 | -0.527 | Pool=15, SMA=100 | -0.013 |
+| Fold 2 | Pool=20, SMA=150 | -0.128 | +0.733 | Pool=20, SMA=100 | +0.781 |
+| Fold 3 | Pool=10, SMA=100 | -0.072 | -0.141 | Pool=20, SMA=150 | +0.853 |
 
 A coluna que importa é a quarta: **o desempenho, fora da amostra de escolha, do par
 que teria sido escolhido**. A diferença entre ela e a última coluna é o custo da
@@ -38,15 +38,15 @@ escolha de parâmetro.
 
 | Fold | SMA 50 | SMA 100 | SMA 150 | SMA 200 |
 |---|---|---|---|---|
-| Fold 1 | -0.318 | -0.458 | -0.511 | -0.678 |
-| Fold 2 | +0.626 | +0.705 | +0.794 | +0.561 |
-| Fold 3 | +0.064 | +0.614 | +0.760 | +0.490 |
+| Fold 1 | -0.348 | -0.176 | -0.288 | -0.478 |
+| Fold 2 | +0.408 | +0.781 | +0.733 | +0.439 |
+| Fold 3 | +0.275 | +0.709 | +0.853 | +0.635 |
 
 ## 4. Veredito
 
-> **O par vencedor muda a cada fold**: (10, 50), (10, 50) e (20, 150). Pelo critério do próprio plano-mestre (Parte 3.1.1), isso significa que **o sinal é fraco** e a escolha de (Pool=20, SMA=150) reflete o desempenho médio no in-sample inteiro, não uma regularidade estável no tempo. Deve ser reportado assim.
+> **O par vencedor muda a cada fold**: (15, 100), (20, 100) e (20, 150). Pelo critério do próprio plano-mestre (Parte 3.1.1), isso significa que **o sinal é fraco** e a escolha de (Pool=20, SMA=150) reflete o desempenho médio no in-sample inteiro, não uma regularidade estável no tempo. Deve ser reportado assim.
 
-**Sharpe in-sample completo de (Pool=20, SMA=150): `-0.017`**
+**Sharpe in-sample completo de (Pool=20, SMA=150): `+0.127`**
 
 ### Ressalva sobre o Fold 1
 

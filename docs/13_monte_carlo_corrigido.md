@@ -25,19 +25,19 @@
 
 ## 3. Resultados
 
-**Sharpe geométrico da variante oficial (recalculado): `-0.0169`**
+**Sharpe geométrico da variante oficial (recalculado): `+0.1265`**
 
 | Nulo | Mediana | Percentil 95 | p-value vs. Nexus |
 |---|---|---|---|
-| N1 — clássico | -0.187 | +0.101 | **15.0%** |
-| N2 — pareado | +0.086 | +0.334 | **77.0%** |
-| N3 — máximo do grid | +0.284 | +0.544 | **100.0%** |
+| N1 — clássico | -0.196 | +0.172 | **8.0%** |
+| N2 — pareado | +0.133 | +0.428 | **51.0%** |
+| N3 — máximo do grid | +0.341 | +0.598 | **96.0%** |
 
 Trajetórias: 200 (N1, N2), 100 (N3).
 
 ## 4. Veredito
 
-> O Sharpe de -0.017 **não** supera o nulo pareado (p=77.0%). Sortear 20 ações do mesmo universo e aplicar os mesmos filtros produz resultado equivalente. A afirmação de significância estatística publicada em `docs/06` não se sustenta quando o nulo recebe as mesmas camadas do tratamento.
+> O Sharpe de +0.127 **não** supera o nulo pareado (p=51.0%). Sortear 20 ações do mesmo universo e aplicar os mesmos filtros produz resultado equivalente. A afirmação de significância estatística publicada em `docs/06` não se sustenta quando o nulo recebe as mesmas camadas do tratamento.
 
 ## 5. Visualização
 

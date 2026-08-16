@@ -34,25 +34,25 @@ meses de histórico, o filtro se abstém.
 
 | Percentil | Meses acionado | CAGR | Vol. | Sharpe (com cap) | MDD | Sharpe (sem cap) |
 |---|---|---|---|---|---|---|
-| **5%** | 2/91 (2.2%) | 10.3% | 15.8% | -0.002 | -18.3% | -0.064 |
-| **10%** ⬅ **travado** | 5/91 (5.5%) | 11.2% | 15.5% | +0.055 | -15.3% | +0.016 |
-| **15%** | 14/91 (15.4%) | 8.0% | 13.7% | -0.171 | -15.3% | -0.196 |
-| **20%** | 19/91 (20.9%) | 7.5% | 13.4% | -0.207 | -15.3% | -0.230 |
+| **5%** | 2/91 (2.2%) | 12.3% | 14.9% | +0.135 | -13.6% | +0.109 |
+| **10%** ⬅ **travado** | 5/91 (5.5%) | 13.2% | 14.7% | +0.195 | -13.6% | +0.184 |
+| **15%** | 12/91 (13.2%) | 11.8% | 13.9% | +0.109 | -11.4% | +0.094 |
+| **20%** | 19/91 (20.9%) | 10.3% | 13.0% | -0.002 | -11.4% | -0.013 |
 
-**Linha de base sem regime:** V3 (com cap) Sharpe -0.017,
-MDD -19.6% | V2 (sem cap) Sharpe -0.078,
-MDD -25.2%.
+**Linha de base sem regime:** V3 (com cap) Sharpe +0.127,
+MDD -13.6% | V2 (sem cap) Sharpe +0.101,
+MDD -14.2%.
 
 ## 3. Teste de redundância com o cap de 10%
 
 | Configuração | Sharpe | MDD | % médio em CDI |
 |---|---|---|---|
-| V3 (cap, sem regime) | -0.017 | -19.6% | 13.4% |
-| V3 + regime p10 | +0.055 | -15.3% | 16.9% |
-| V2 (sem cap, sem regime) | -0.078 | -25.2% | 4.4% |
-| V2 + regime p10 | +0.016 | -18.3% | 8.2% |
+| V3 (cap, sem regime) | +0.127 | -13.6% | 12.9% |
+| V3 + regime p10 | +0.195 | -13.6% | 16.5% |
+| V2 (sem cap, sem regime) | +0.101 | -14.2% | 4.4% |
+| V2 + regime p10 | +0.184 | -14.2% | 8.2% |
 
-> **O filtro de regime agrega sobre o cap.** No percentil 10%, o Sharpe varia +0.072 e o drawdown máximo varia +4.4 p.p. em relação ao V3 sem regime. Sobre a base sem cap (V2), o efeito isolado é de +0.093.
+> **O filtro de regime agrega sobre o cap.** No percentil 10%, o Sharpe varia +0.068 e o drawdown máximo varia -0.0 p.p. em relação ao V3 sem regime. Sobre a base sem cap (V2), o efeito isolado é de +0.083.
 
 ## 4. Atraso estrutural de reação
 
@@ -64,7 +64,7 @@ ser declarada em vez de escondida.
 | Crise (in-sample) | Mês do choque | Mês da reação | Atraso (meses) |
 |---|---|---|---|
 | Crise do euro / downgrade (2011-2012) | 2011-09 | não acionou | — |
-| Colapso de commodities (2014-2015) | 2015-08 | 2014-11 | -9 |
+| Colapso de commodities (2014-2015) | 2014-09 | 2014-11 | 2 |
 | Joesley Day (2017) | 2017-05 | não acionou | — |
 | Greve dos caminhoneiros (2018) | 2018-06 | 2018-09 | 3 |
 

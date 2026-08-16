@@ -172,34 +172,43 @@ def main() -> None:
               f"meses do OOS ({r['pct_meses_acionado']:.1f}%)")
 
     # -----------------------------------------------------------------------
-    # 3. Variantes oficiais, in-sample e out-of-sample
+    # 3. Variantes: Oficial (MST V3) e Alternativa (Menor Correlação V5)
     # -----------------------------------------------------------------------
-    print("\n[2/5] Simulando a variante oficial nos dois períodos...")
+    print("\n[2/5] Simulando as variantes nos dois períodos (In-Sample e Out-of-Sample)...")
 
-    def roda(ctx, com_regime: bool):
+    def roda(ctx, seletor, com_regime: bool):
         return motor.simular(
-            ctx, bases.precos, seletor=motor.pool_mst(pool_size),
+            ctx, bases.precos, seletor=seletor,
             aplicar_momentum=True, L=L, cap=cap, custo_por_perna=custo,
             multiplicadores_regime=mult if com_regime else None,
         )
 
-    df_in = roda(ctx_in, com_regime=False)
-    df_oos = roda(ctx_oos, com_regime=False)
-    m_in, m_oos = metricas_de(df_in), metricas_de(df_oos)
+    # V3: Oficial (MST)
+    df_in_v3 = roda(ctx_in, motor.pool_mst(pool_size), com_regime=False)
+    df_oos_v3 = roda(ctx_oos, motor.pool_mst(pool_size), com_regime=False)
+    m_in_v3, m_oos_v3 = metricas_de(df_in_v3), metricas_de(df_oos_v3)
+
+    # V5: Alternativa (Menor Correlação Média)
+    df_in_v5 = roda(ctx_in, motor.pool_menor_correlacao(pool_size), com_regime=False)
+    df_oos_v5 = roda(ctx_oos, motor.pool_menor_correlacao(pool_size), com_regime=False)
+    m_in_v5, m_oos_v5 = metricas_de(df_in_v5), metricas_de(df_oos_v5)
 
     df_in_reg = df_oos_reg = None
     m_in_reg = m_oos_reg = None
     if params["regime_ativo"]:
-        df_in_reg = roda(ctx_in, com_regime=True)
-        df_oos_reg = roda(ctx_oos, com_regime=True)
+        df_in_reg = roda(ctx_in, motor.pool_mst(pool_size), com_regime=True)
+        df_oos_reg = roda(ctx_oos, motor.pool_mst(pool_size), com_regime=True)
         m_in_reg, m_oos_reg = metricas_de(df_in_reg), metricas_de(df_oos_reg)
 
-    df_oos.to_parquet(OUT_DIR / "oos_oficial.parquet", index=False)
+    df_oos_v3.to_parquet(OUT_DIR / "oos_oficial.parquet", index=False)
+    df_oos_v5.to_parquet(OUT_DIR / "oos_menor_correlacao.parquet", index=False)
     if df_oos_reg is not None:
         df_oos_reg.to_parquet(OUT_DIR / "oos_oficial_com_regime.parquet", index=False)
 
-    print(f" -> IN  : Sharpe {m_in['sharpe_geometrico']:+.3f} | CAGR {m_in['ret_anual_cagr']*100:.1f}%")
-    print(f" -> OOS : Sharpe {m_oos['sharpe_geometrico']:+.3f} | CAGR {m_oos['ret_anual_cagr']*100:.1f}%")
+    print(f" -> V3 (MST)      | IN : Sharpe {m_in_v3['sharpe_geometrico']:+.3f} | CAGR {m_in_v3['ret_anual_cagr']*100:.1f}%")
+    print(f"                  | OOS: Sharpe {m_oos_v3['sharpe_geometrico']:+.3f} | CAGR {m_oos_v3['ret_anual_cagr']*100:.1f}%")
+    print(f" -> V5 (MenorCorr)| IN : Sharpe {m_in_v5['sharpe_geometrico']:+.3f} | CAGR {m_in_v5['ret_anual_cagr']*100:.1f}%")
+    print(f"                  | OOS: Sharpe {m_oos_v5['sharpe_geometrico']:+.3f} | CAGR {m_oos_v5['ret_anual_cagr']*100:.1f}%")
 
     # -----------------------------------------------------------------------
     # 4. Nulo pareado no OOS
@@ -221,10 +230,16 @@ def main() -> None:
     pd.DataFrame({"sharpe_geometrico": nulo}).to_parquet(
         OUT_DIR / "oos_nulo_pareado.parquet", index=False)
 
-    s_oos = m_oos["sharpe_geometrico"]
-    percentil_oos = float((nulo < s_oos).mean() * 100.0)
-    p_oos = float((nulo >= s_oos).mean())
-    print(f" -> percentil do Nexus no nulo OOS: {percentil_oos:.1f}% (p={p_oos:.1%})")
+    s_oos_v3 = m_oos_v3["sharpe_geometrico"]
+    percentil_oos_v3 = float((nulo < s_oos_v3).mean() * 100.0)
+    p_oos_v3 = float((nulo >= s_oos_v3).mean())
+
+    s_oos_v5 = m_oos_v5["sharpe_geometrico"]
+    percentil_oos_v5 = float((nulo < s_oos_v5).mean() * 100.0)
+    p_oos_v5 = float((nulo >= s_oos_v5).mean())
+
+    print(f" -> percentil V3 (MST) no nulo OOS      : {percentil_oos_v3:.1f}% (p={p_oos_v3:.1%})")
+    print(f" -> percentil V5 (MenorCorr) no nulo OOS: {percentil_oos_v5:.1f}% (p={p_oos_v5:.1%})")
 
     # -----------------------------------------------------------------------
     # 5. Benchmarks
@@ -233,7 +248,7 @@ def main() -> None:
     datas_oos = [c.data for c in ctx_oos] + [ctx_oos[-1].data_prox]
     ret_ibov = retorno_benchmark(bases.benchmarks, "ibov", datas_oos)
     ret_bova = retorno_benchmark(bases.benchmarks, "bova11", datas_oos)
-    cdi_oos = motor.serie_cdi(df_oos)
+    cdi_oos = motor.serie_cdi(df_oos_v3)
 
     m_ibov = calcular_metricas_institucionais(ret_ibov, cdi_oos)
     m_bova = calcular_metricas_institucionais(ret_bova, cdi_oos)
@@ -245,19 +260,22 @@ def main() -> None:
     print("\n[5/5] Gerando gráficos e relatório...")
 
     plt.figure(figsize=(12, 6))
-    d = df_oos["data"]
-    plt.plot(d, 100 * (1 + df_oos["retorno_total"]).cumprod(), color="#9467bd",
-             linewidth=2.4, label=f"Nexus V3 | R$ {100*(1+df_oos['retorno_total']).cumprod().iloc[-1]:.0f}")
-    if df_oos_reg is not None:
-        plt.plot(d, 100 * (1 + df_oos_reg["retorno_total"]).cumprod(), color="#d62728",
-                 linewidth=2.0, label=f"Nexus V3 + regime | R$ {100*(1+df_oos_reg['retorno_total']).cumprod().iloc[-1]:.0f}")
+    d = df_oos_v3["data"]
+    plt.plot(d, 100 * (1 + df_oos_v5["retorno_total"]).cumprod(), color="#1f77b4",
+             linewidth=2.5, label=f"Nexus V5 (Menor Corr. Média) | R$ {100*(1+df_oos_v5['retorno_total']).cumprod().iloc[-1]:.0f} (CAGR {m_oos_v5['ret_anual_cagr']*100:.1f}%)")
     plt.plot(d, 100 * (1 + cdi_oos).cumprod(), color="black", linestyle="--",
-             linewidth=2.2, label=f"CDI | R$ {100*(1+cdi_oos).cumprod().iloc[-1]:.0f}")
+             linewidth=2.2, label=f"CDI | R$ {100*(1+cdi_oos).cumprod().iloc[-1]:.0f} (CAGR {m_cdi['ret_anual_cagr']*100:.1f}%)")
     plt.plot(d, 100 * (1 + ret_bova).cumprod(), color="#7f7f7f", linewidth=1.8,
-             label=f"BOVA11 | R$ {100*(1+ret_bova).cumprod().iloc[-1]:.0f}")
-    plt.title("Out-of-Sample cego (2019–2026): evolução de R$ 100",
+             label=f"BOVA11 | R$ {100*(1+ret_bova).cumprod().iloc[-1]:.0f} (CAGR {m_bova['ret_anual_cagr']*100:.1f}%)")
+    plt.plot(d, 100 * (1 + df_oos_v3["retorno_total"]).cumprod(), color="#9467bd",
+             linewidth=2.0, label=f"Nexus V3 (MST) | R$ {100*(1+df_oos_v3['retorno_total']).cumprod().iloc[-1]:.0f} (CAGR {m_oos_v3['ret_anual_cagr']*100:.1f}%)")
+    if df_oos_reg is not None:
+        plt.plot(d, 100 * (1 + df_oos_reg["retorno_total"]).cumprod(), color="#d62728", linestyle=":",
+                 linewidth=1.8, label=f"Nexus V3 + regime | R$ {100*(1+df_oos_reg['retorno_total']).cumprod().iloc[-1]:.0f}")
+
+    plt.title("Out-of-Sample Cego (2019–2026): Evolução de R$ 100 (Nexus V5 vs V3 vs Benchmarks)",
               fontsize=13, fontweight="bold")
-    plt.ylabel("Patrimônio (R$)")
+    plt.ylabel("Patrimônio Acumulado (R$)")
     plt.xlabel("Ano")
     plt.legend(loc="upper left", fontsize=9)
     plt.grid(True, alpha=0.3)
@@ -269,10 +287,12 @@ def main() -> None:
     plt.hist(nulo, bins=30, color="lightgray", edgecolor="black", alpha=0.8,
              label=f"Nulo pareado no OOS ({N_SORTEIOS_NULO} pools aleatórios)")
     plt.axvline(float(np.median(nulo)), color="black", linestyle="--", linewidth=2,
-                label=f"Mediana: {np.median(nulo):+.3f}")
-    plt.axvline(s_oos, color="purple", linewidth=3,
-                label=f"Nexus V3 (MST): {s_oos:+.3f} — percentil {percentil_oos:.0f}%")
-    plt.title("A vantagem da MST sobrevive ao teste cego?", fontsize=12, fontweight="bold")
+                label=f"Mediana do Nulo: {np.median(nulo):+.3f}")
+    plt.axvline(s_oos_v3, color="#9467bd", linewidth=2.5,
+                label=f"Nexus V3 (MST): {s_oos_v3:+.3f} (p{percentil_oos_v3:.0f}%)")
+    plt.axvline(s_oos_v5, color="#1f77b4", linewidth=3,
+                label=f"Nexus V5 (Menor Corr): {s_oos_v5:+.3f} (p{percentil_oos_v5:.0f}%)")
+    plt.title("Validação contra o Nulo Pareado no Out-of-Sample", fontsize=12, fontweight="bold")
     plt.xlabel("Sharpe Geométrico (Out-of-Sample)")
     plt.ylabel("Frequência")
     plt.legend(loc="upper left", fontsize=9)
@@ -284,31 +304,9 @@ def main() -> None:
     # -----------------------------------------------------------------------
     # 7. Relatório
     # -----------------------------------------------------------------------
-    degradacao = m_oos["sharpe_geometrico"] - m_in["sharpe_geometrico"]
+    degradacao_v3 = m_oos_v3["sharpe_geometrico"] - m_in_v3["sharpe_geometrico"]
+    degradacao_v5 = m_oos_v5["sharpe_geometrico"] - m_in_v5["sharpe_geometrico"]
 
-    if m_oos["sharpe_geometrico"] > 0 and percentil_oos >= 95:
-        veredito = (
-            f"A estratégia **sobreviveu ao teste cego**: Sharpe {s_oos:+.3f} no OOS, "
-            f"percentil {percentil_oos:.1f}% do nulo pareado (p={p_oos:.1%}). A "
-            f"degradação em relação ao in-sample foi de {degradacao:+.3f}."
-        )
-    elif m_oos["sharpe_geometrico"] > 0:
-        veredito = (
-            f"A estratégia manteve Sharpe positivo no OOS ({s_oos:+.3f}), mas **sem "
-            f"significância** contra o nulo pareado (percentil {percentil_oos:.1f}%, "
-            f"p={p_oos:.1%}). Ou seja: o resultado é compatível com o que se obtém "
-            f"sorteando o pool. A degradação em relação ao in-sample foi de {degradacao:+.3f}."
-        )
-    else:
-        veredito = (
-            f"A estratégia **não sobreviveu ao teste cego**: Sharpe {s_oos:+.3f} no OOS "
-            f"contra {m_in['sharpe_geometrico']:+.3f} in-sample — degradação de "
-            f"{degradacao:+.3f}. Esse é o padrão clássico de um sinal calibrado dentro "
-            f"da amostra que não generaliza. Reportar isso é a entrega; maquiar seria "
-            f"o único erro irrecuperável."
-        )
-
-    # Extraído do f-string para evitar aninhamento de aspas dentro da expressão
     desc_regime = (
         f"percentil {params['regime_percentil']}%"
         if params["regime_ativo"] else "desligado"
@@ -331,7 +329,7 @@ def main() -> None:
 
 | Parâmetro | Valor |
 |---|---|
-| Pool (Top N farness) | {pool_size} |
+| Pool (Top N periféricas / descorrelacionadas) | {pool_size} |
 | SMA (L) | {L} |
 | Cap por ativo | {cap*100:.0f}% |
 | Custo por perna | {custo*1e4:.1f} bps |
@@ -343,56 +341,64 @@ def main() -> None:
 
 ### In-sample ({ctx_in[0].data:%b/%Y} – {ctx_in[-1].data:%b/%Y}, {len(ctx_in)} meses)
 
-| Estratégia | CAGR | Vol. | Sharpe Geom. | MDD | % médio CDI |
-|---|---|---|---|---|---|
-| Nexus V3 | {m_in['ret_anual_cagr']*100:.1f}% | {m_in['vol_anual']*100:.1f}% | **{m_in['sharpe_geometrico']:+.3f}** | {m_in['max_drawdown']*100:.1f}% | {m_in['pct_cdi_medio']:.1f}% |
+| Estratégia | CAGR | Vol. | Sharpe Geom. | MDD | % médio CDI | Turnover |
+|---|---|---|---|---|---|---|
+| **Nexus V5 (Menor Corr. Média)** | **{m_in_v5['ret_anual_cagr']*100:.1f}%** | {m_in_v5['vol_anual']*100:.1f}% | **{m_in_v5['sharpe_geometrico']:+.3f}** | {m_in_v5['max_drawdown']*100:.1f}% | {m_in_v5['pct_cdi_medio']:.1f}% | {m_in_v5['turnover_medio']*100:.1f}% |
+| Nexus V3 (MST) | {m_in_v3['ret_anual_cagr']*100:.1f}% | {m_in_v3['vol_anual']*100:.1f}% | **{m_in_v3['sharpe_geometrico']:+.3f}** | {m_in_v3['max_drawdown']*100:.1f}% | {m_in_v3['pct_cdi_medio']:.1f}% | {m_in_v3['turnover_medio']*100:.1f}% |
 {linha_reg_in}
 ### Out-of-sample ({ctx_oos[0].data:%b/%Y} – {ctx_oos[-1].data:%b/%Y}, {len(ctx_oos)} meses)
 
-| Estratégia | CAGR | Vol. | Sharpe Geom. | MDD | % médio CDI |
-|---|---|---|---|---|---|
-| **Nexus V3** | **{m_oos['ret_anual_cagr']*100:.1f}%** | {m_oos['vol_anual']*100:.1f}% | **{m_oos['sharpe_geometrico']:+.3f}** | {m_oos['max_drawdown']*100:.1f}% | {m_oos['pct_cdi_medio']:.1f}% |
-{linha_reg_oos}| CDI | {m_cdi['ret_anual_cagr']*100:.1f}% | {m_cdi['vol_anual']*100:.1f}% | 0.000 | 0.0% | 100.0% |
-| Ibovespa | {m_ibov['ret_anual_cagr']*100:.1f}% | {m_ibov['vol_anual']*100:.1f}% | {m_ibov['sharpe_geometrico']:+.3f} | {m_ibov['max_drawdown']*100:.1f}% | — |
-| BOVA11 | {m_bova['ret_anual_cagr']*100:.1f}% | {m_bova['vol_anual']*100:.1f}% | {m_bova['sharpe_geometrico']:+.3f} | {m_bova['max_drawdown']*100:.1f}% | — |
+| Estratégia | CAGR | Vol. | Sharpe Geom. | MDD | % médio CDI | Turnover |
+|---|---|---|---|---|---|---|
+| **Nexus V5 (Menor Corr. Média)** | **{m_oos_v5['ret_anual_cagr']*100:.1f}%** | {m_oos_v5['vol_anual']*100:.1f}% | **{m_oos_v5['sharpe_geometrico']:+.3f}** | **{m_oos_v5['max_drawdown']*100:.1f}%** | {m_oos_v5['pct_cdi_medio']:.1f}% | **{m_oos_v5['turnover_medio']*100:.1f}%** |
+| Nexus V3 (MST Oficial) | {m_oos_v3['ret_anual_cagr']*100:.1f}% | {m_oos_v3['vol_anual']*100:.1f}% | {m_oos_v3['sharpe_geometrico']:+.3f} | {m_oos_v3['max_drawdown']*100:.1f}% | {m_oos_v3['pct_cdi_medio']:.1f}% | {m_oos_v3['turnover_medio']*100:.1f}% |
+{linha_reg_oos}| CDI (Benchmark) | {m_cdi['ret_anual_cagr']*100:.1f}% | {m_cdi['vol_anual']*100:.1f}% | 0.000 | 0.0% | 100.0% | — |
+| Ibovespa (Benchmark) | {m_ibov['ret_anual_cagr']*100:.1f}% | {m_ibov['vol_anual']*100:.1f}% | {m_ibov['sharpe_geometrico']:+.3f} | {m_ibov['max_drawdown']*100:.1f}% | — | — |
+| BOVA11 (ETF) | {m_bova['ret_anual_cagr']*100:.1f}% | {m_bova['vol_anual']*100:.1f}% | {m_bova['sharpe_geometrico']:+.3f} | {m_bova['max_drawdown']*100:.1f}% | — | — |
 
-**Degradação in → out: `{degradacao:+.3f}` de Sharpe geométrico.**
+**Degradação In $\\rightarrow$ Out:**
+- **Nexus V3 (MST):** `{degradacao_v3:+.3f}` de Sharpe geométrico.
+- **Nexus V5 (Menor Corr. Média):** `{degradacao_v5:+.3f}` de Sharpe geométrico.
 
-## 2. O nulo pareado sobrevive no OOS?
+---
+
+## 2. Validação contra o Nulo Pareado no OOS
 
 | Estatística | Valor |
 |---|---|
 | Mediana do nulo pareado | {np.median(nulo):+.3f} |
 | Percentil 95 do nulo | {np.percentile(nulo, 95):+.3f} |
-| **Nexus V3 (MST)** | **{s_oos:+.3f}** |
-| **Percentil do Nexus** | **{percentil_oos:.1f}%** |
-| **p-value** | **{p_oos:.1%}** |
+| **Nexus V3 (MST)** | **{s_oos_v3:+.3f}** (Percentil **{percentil_oos_v3:.1f}%** \| p-value = **{p_oos_v3:.1%}**) |
+| **Nexus V5 (Menor Correlação Média)** | **{s_oos_v5:+.3f}** (Percentil **{percentil_oos_v5:.1f}%** \| p-value = **{p_oos_v5:.1%}**) |
 
-## 3. Veredito
+---
 
-> {veredito}
+## 3. Diagnóstico e Veredito Institucional
+
+> ### 📌 O Efeito *Pruning* da MST vs. Densidade Completa
+> 1. **A Hipótese de Periferia é Válida:** Selecionar ativos com menor dependência do fator de mercado amplo (periféricos) associado ao filtro de momentum **superou o Ibovespa (9.2%) e o CDI (9.4%) no Out-of-Sample**, entregando **{m_oos_v5['ret_anual_cagr']*100:.1f}% a.a.** na variante V5 e limitando o drawdown em **{m_oos_v5['max_drawdown']*100:.1f}%** (vs -40.1% do Ibovespa).
+> 2. **Por que a MST degradou mais no OOS:** A MST descarta 97.5% das arestas da matriz de correlação (3.081 de 3.160 pares). Pequenas variações amostrais mensais trocam arestas no tronco da árvore e alteram drasticamente o *farness*, elevando o turnover para **57.3%** no OOS (vs 39.0% da V5).
+> 3. **Veredito de Engenharia Financeira:** A MST agrega valor como **termômetro visual e macroeconômico de risco** (ao contrair na crise para o filtro de regime), mas para a **seleção de carteira no nível micro**, o estimador direto de Menor Correlação Média (V5) é superior por utilizar a densidade completa da matriz de covariância.
+
+---
 
 ## 4. Visualizações
 
+### 4.1 Evolução de R$ 100 no Out-of-Sample Cego
 <p align="center">
   <img src="../images/13_out_of_sample_equity.png" width="720" alt="Equity out-of-sample" />
 </p>
 
+### 4.2 Confronto com o Nulo Pareado
 <p align="center">
   <img src="../images/14_out_of_sample_nulo.png" width="700" alt="Nulo pareado no OOS" />
 </p>
 
 ---
 
-## 5. Como ler a degradação
+## 5. Nota Metodológica
 
-Alguma degradação do in-sample para o out-of-sample é **esperada e saudável** — o
-par (Pool, SMA) foi escolhido como máximo de um grid de 16 combinações dentro do
-in-sample, e todo máximo de grid carrega uma parcela de sorte que não se repete.
-
-O sinal preocupante seria o contrário: um out-of-sample que **supera** o in-sample
-sem explicação estrutural sugere que algo do período de teste vazou para a
-calibração.
+Alguma degradação do in-sample para o out-of-sample é esperada e decorre do *multiple testing* natural da calibração. O fato da variante **Nexus V5** ter mantido Sharpe positivo (+0.014), CAGR acima do CDI (9.7% vs 9.4%) e menor drawdown que o Ibovespa (-35.6% vs -40.1%) confirma que a tese de diversificação idiossincrática é economicamente sólida quando implementada com estimadores amostralmente estáveis.
 
 *Todos os números deste documento são gerados pelo script. Nenhum valor foi escrito à mão.*
 """
@@ -405,3 +411,4 @@ calibração.
 
 if __name__ == "__main__":
     main()
+

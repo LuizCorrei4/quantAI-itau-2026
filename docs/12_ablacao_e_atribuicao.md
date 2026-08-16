@@ -20,12 +20,12 @@ Este documento isola cada camada mantendo as demais constantes.
 
 | Variante | Composição | CAGR | Vol. | Sharpe Geom. | Sharpe Clás. | MDD | Nº médio ações | % médio CDI | Turnover |
 |---|---|---|---|---|---|---|---|---|---|
-| **V0** | Universo 80, equal-weight, sem filtros | 7.8% | 20.8% | **-0.122** | -0.011 | -39.8% | 80.0 | 0.0% | 2.4% |
-| **V1** | MST top-20, sem momentum, cap 10% | 3.1% | 19.7% | **-0.364** | -0.246 | -46.6% | 20.0 | -0.0% | 58.8% |
-| **V2** | MST top-20 + SMA150, **sem** cap (100% investido) | 8.9% | 17.6% | **-0.078** | +0.016 | -25.2% | 11.3 | 4.4% | 63.3% |
-| **V3** | MST top-20 + SMA150 + cap 10% — **oficial** | 10.0% | 15.8% | **-0.017** | +0.063 | -19.6% | 11.3 | 13.4% | 55.9% |
-| **V5** | Menor correlação média + SMA150 + cap 10% | 12.2% | 14.2% | **+0.134** | +0.191 | -14.8% | 11.3 | 11.0% | 36.4% |
-| **V6** | Menor \|beta\| vs. IBOV + SMA150 + cap 10% | 10.2% | 12.9% | **-0.010** | +0.055 | -14.9% | 12.3 | 8.1% | 34.6% |
+| **V0** | Universo 80, equal-weight, sem filtros | 7.9% | 20.6% | **-0.118** | -0.008 | -39.1% | 80.0 | 0.0% | 2.4% |
+| **V1** | MST top-20, sem momentum, cap 10% | 3.9% | 18.4% | **-0.347** | -0.235 | -44.4% | 20.0 | -0.0% | 57.7% |
+| **V2** | MST top-20 + SMA150, **sem** cap (100% investido) | 12.0% | 16.7% | **+0.101** | +0.175 | -14.2% | 11.4 | 4.4% | 62.6% |
+| **V3** | MST top-20 + SMA150 + cap 10% — **oficial** | 12.2% | 14.9% | **+0.127** | +0.188 | -13.6% | 11.4 | 12.9% | 55.7% |
+| **V5** | Menor correlação média + SMA150 + cap 10% | 14.2% | 14.1% | **+0.274** | +0.317 | -12.3% | 11.5 | 9.9% | 35.2% |
+| **V6** | Menor \|beta\| vs. IBOV + SMA150 + cap 10% | 11.7% | 12.6% | **+0.112** | +0.163 | -13.7% | 12.4 | 7.4% | 33.9% |
 
 ### V4 — Nulo pareado (200 sorteios)
 
@@ -35,28 +35,28 @@ Difere do V3 em exatamente uma coisa: a origem do pool.
 
 | Estatística | Sharpe Geométrico |
 |---|---|
-| Mediana do nulo | +0.086 |
-| Percentil 95 do nulo | +0.334 |
-| **V3 (MST)** | **-0.017** |
-| **Percentil do V3 no nulo** | **23.0%** |
-| **p-value (unilateral)** | **77.0%** |
+| Mediana do nulo | +0.133 |
+| Percentil 95 do nulo | +0.428 |
+| **V3 (MST)** | **+0.127** |
+| **Percentil do V3 no nulo** | **49.0%** |
+| **p-value (unilateral)** | **51.0%** |
 
 ## 3. As três leituras
 
 | Comparação | Diferença de Sharpe | Interpretação |
 |---|---|---|
-| **V3 − V4 (mediana)** | **-0.103** | contribuição da **seleção topológica** |
-| **V3 − V2** | **+0.061** | contribuição do **colchão de caixa** (cap) |
-| **V3 − V1** | **+0.347** | contribuição do **filtro de momentum** |
+| **V3 − V4 (mediana)** | **-0.007** | contribuição da **seleção topológica** |
+| **V3 − V2** | **+0.026** | contribuição do **colchão de caixa** (cap) |
+| **V3 − V1** | **+0.473** | contribuição do **filtro de momentum** |
 
-A camada que mais contribuiu foi: **momentum** (+0.347).
+A camada que mais contribuiu foi: **momentum** (+0.473).
 
 ### Controles sem grafo (plano-mestre, Parte 2.5.4)
 
 | Controle | Sharpe | vs. V3 |
 |---|---|---|
-| V5 — menor correlação média | +0.134 | -0.151 |
-| V6 — menor \|beta\| vs. IBOV | -0.010 | -0.007 |
+| V5 — menor correlação média | +0.274 | -0.148 |
+| V6 — menor \|beta\| vs. IBOV | +0.112 | +0.015 |
 
 Se um destes empata com o V3, a MST está reproduzindo um critério que se obtém
 sem teoria de grafos — e a contribuição do grafo passa a ser interpretabilidade e
@@ -65,7 +65,7 @@ conclusão legítima.
 
 ## 4. Veredito
 
-> A seleção topológica **não agrega** sobre um pool aleatório. O V3 caiu no percentil 23.0% do nulo pareado — dentro do que se obtém sorteando 20 ações do mesmo universo e aplicando os mesmos filtros. O Sharpe do Robô Nexus vem do momentum e do colchão de caixa, **não da posição das ações na MST**. Este é um resultado negativo legítimo e deve ser reportado como tal.
+> A seleção topológica **não agrega** sobre um pool aleatório. O V3 caiu no percentil 49.0% do nulo pareado — dentro do que se obtém sorteando 20 ações do mesmo universo e aplicando os mesmos filtros. O Sharpe do Robô Nexus vem do momentum e do colchão de caixa, **não da posição das ações na MST**. Este é um resultado negativo legítimo e deve ser reportado como tal.
 
 ## 5. Visualizações
 
