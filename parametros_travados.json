@@ -1,0 +1,12 @@
+{
+  "pool_size": 20,
+  "L_momentum": 150,
+  "cap_por_ativo": 0.10,
+  "custo_por_perna": 0.0005,
+  "regime_ativo": true,
+  "regime_percentil": 10,
+  "regime_exposicao_crise": 0.30,
+  "regime_min_historico": 24,
+  "origem": "Pool=20 e SMA=150 vindos do grid in-sample (script 10, replicado no 18); regime percentil=10 escolhido pela calibracao in-sample do script 16 (melhor Sharpe entre 5/10/15/20). Nenhum dado posterior a 2018-12-31 foi consultado para fixar estes valores.",
+  "travado_em": "2026-08-15"
+}

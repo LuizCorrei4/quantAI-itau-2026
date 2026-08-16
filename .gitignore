@@ -8,3 +8,5 @@ dados/brutos/*.parquet
 dados/processados/*.parquet
 
 temp/
+
+tickets_pessoa2/

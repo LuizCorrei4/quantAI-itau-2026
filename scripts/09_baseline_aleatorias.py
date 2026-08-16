@@ -1,7 +1,31 @@
 """
+===============================================================================
+!!! SCRIPT SUPERSEDED — NÃO EXECUTE (ver TICKET-C02) !!!
+===============================================================================
+Substituído por `scripts/15_monte_carlo_corrigido.py`.
+
+Rodá-lo sobrescreve `docs/06_teste_monte_carlo_baselines.md` com números que NÃO
+são calculados. Três defeitos, todos ainda presentes no código abaixo:
+
+  1. `SHARPE_NEXUS = 0.10` está hardcoded (linha ~117) e o p-value é calculado
+     contra esse literal — mas o markdown gerado publica `0.122` e `3.2%` como
+     STRINGS LITERAIS (linhas ~178-179). O p-value calculado nunca é publicado;
+     o publicado nunca é calculado. O gráfico marca a linha em 0.10.
+
+  2. Os macacos recebem `calcular_pesos_equal_weight(candidatas)` SEM o argumento
+     `cap`: ficam 100% investidos, enquanto o Nexus mantém ~13% em CDI. Num
+     período em que o CDI (10,3% a.a.) superou o Ibovespa (6,2% a.a.), o colchão
+     de caixa é vantagem estrutural — não alpha da estratégia.
+
+  3. Não há correção de multiple testing: o par vencedor é o máximo de um grid de
+     16 combinações, comparado ao percentil 95 de um sorteio único.
+
+Mantido no repositório apenas como registro histórico da auditoria.
+===============================================================================
+
 Baselines e o Teste dos Macacos (Monte Carlo)
 
-Este script cumpre o objetivo de responder 
+Este script cumpre o objetivo de responder
 a uma pergunta crítica que qualquer banca quantitativa fará:
 "O seu robô deu lucro porque ele é inteligente, ou apenas porque o mercado subiu?"
 
@@ -191,4 +215,15 @@ def main():
     print(f"[+] Relatório salvo em: {doc_path.resolve()}")
 
 if __name__ == '__main__':
+    # Guarda-corpo: impede que uma execução acidental sobrescreva docs/06 com
+    # números não calculados. Ver TICKET-C02.
+    if "--forcar-script-obsoleto" not in sys.argv:
+        print("=" * 78)
+        print("  BLOQUEADO — script superseded (TICKET-C02)")
+        print("=" * 78)
+        print("\nUse:  python scripts/15_monte_carlo_corrigido.py\n")
+        print("Este script publica 0.122 e 3.2% como literais e deixa os macacos")
+        print("100% investidos, sem o cap que a estratégia usa. Rodá-lo sobrescreve")
+        print("docs/06 com números que o próprio código não calcula.\n")
+        sys.exit(1)
     main()
