@@ -107,7 +107,7 @@ A teoria tradicional de portfólios (Markowitz) assume matrizes de covariância 
 1. **Universo & Janela:** Calculado mês a mês para as 184 datas de rebalanceamento (2011–2026) sobre os 80 ativos mais líquidos da B3, utilizando uma janela móvel de $T = 63$ dias úteis (~3 meses de pregão).
 2. **Estimador & Fórmula:** A partir da matriz de retornos logarítmicos diários com encolhimento de covariância de *Ledoit-Wolf*, calcula-se a correlação de Pearson para cada par $(i, j)$. O coeficiente de correlação média do mercado ($\overline{\rho}$) é a média aritmética estrita de todos os $\binom{80}{2} = 3.160$ pares distintos fora da diagonal:
    $$\overline{\rho}_t = \frac{1}{3.160} \sum_{1 \le i < j \le 80} \rho_{ij, t}$$
-3. **Mapeamento Topológico:** Na Árvore Geradora Mínima (MST), a distância de Mantegna $d_{ij} = \sqrt{2(1 - \rho_{ij})}$ reflete diretamente essa contração: em regime calmo (jun/2017), a aresta média da MST é de **1.09**, enquanto no colapso da COVID (abr/2020), ela encolhe para **0.69** (contração de ~45% da árvore, visível em `rel_01_mst_comparativa.png`).
+3. **Mapeamento Topológico:** Na Árvore Geradora Mínima (MST), a distância de Mantegna $d_{ij} = \sqrt{2(1 - \rho_{ij})}$ reflete diretamente essa contração: em regime calmo (jun/2017), a aresta média da MST é de **1.09**, enquanto no colapso da COVID (abr/2020), ela encolhe para **0.69** (contração de ~45% da árvore, visível em `images/relatorio/rel_01_mst_comparativa.png`).
 4. **Fundamentação Acadêmica:** 
    - *Longin & Solnik (2001)* ("Extreme Correlation of International Equity Markets", *The Journal of Finance*): Provam que a correlação entre ações aumenta drasticamente em mercados em queda (*downside correlation*), mas não em mercados em alta.
    - *Onnela et al. (2003)* ("Dynamics of market correlations", *Physical Review E*): Demonstram a contração geométrica da MST durante picos de estresse financeiro sistêmico.
@@ -504,7 +504,7 @@ Esta seção é o **painel de verdade institucional completo**, reunindo as mét
 * **Layout Visual Sugerido:** 
   * Topo: Logo lockup Nexus + Assinatura "Investir na borda da rede" + Tags institucionais.
   * Centro-Esquerda: Tese central e problema da diversificação clássica.
-  * Centro-Direita: Gráfico comparativo da MST em mercado calmo vs. crise da COVID (`rel_01_mst_comparativa.png`).
+  * Centro-Direita: Gráfico comparativo da MST em mercado calmo vs. crise da COVID (`images/relatorio/rel_01_mst_comparativa.png`).
   * Rodapé: 3 cards dos Pilares Acadêmicos (Longin & Solnik, Mantegna, Peralta & Zareei).
 
 #### Blocos de Texto (<650 caracteres cada):
@@ -541,9 +541,9 @@ Esta seção é o **painel de verdade institucional completo**, reunindo as mét
 * **Foco no Edital:** Backtest & Rigor Metodológico (15%).
 * **Layout Visual Sugerido:**
   * Topo: Título "ABLAÇÃO IN-SAMPLE (2011–2018) & FALSIFICAÇÃO DE OCCAM".
-  * Esquerda: Gráfico de Drawdown comparado (`rel_05_drawdown.png`) e Curva de Equity In-Sample (`rel_02_equity_insample.png`).
+  * Esquerda: Gráfico de Drawdown comparado (`images/01_mvp_puro_drawdown.png`) e Curva de Equity das variantes In-Sample (`images/09_ablacao_equity_variantes.png`).
   * Direita-Topo: Tabela de Atribuição de Sharpe por Camadas (V0 a V6).
-  * Direita-Base: Caixa de destaque do Descarte do Machine Learning e Teste de Monte Carlo Corrigido (`rel_03_montecarlo.png`).
+  * Direita-Base: Caixa de destaque do Descarte do Machine Learning e Teste de Monte Carlo Corrigido (`images/10_monte_carlo_corrigido.png`).
 
 #### Blocos de Texto (<650 caracteres cada):
 * **[Bloco 3.1 — De Onde Vem o Retorno In-Sample]:**  
@@ -559,9 +559,9 @@ Esta seção é o **painel de verdade institucional completo**, reunindo as mét
 * **Foco no Edital:** Análise Crítica de Resultados (15%).
 * **Layout Visual Sugerido:**
   * Topo: Título "TESTE CEGO OUT-OF-SAMPLE (2019–2026) & DIAGNÓSTICO MICRO-MACRO".
-  * Esquerda: Gráfico de Equity OOS Nexus V5+Regime vs V3 vs CDI vs BOVA11 (`rel_09_oos_equity.png`).
+  * Esquerda: Gráfico de Equity OOS Nexus V5+Regime vs V3 vs CDI vs BOVA11 (`images/13_out_of_sample_equity.png`).
   * Direita-Topo: Tabela OOS comparativa de métricas e turnover.
-  * Direita-Base: Gráfico de amortecimento do Filtro de Regime nos Drawdowns (`rel_10_regime_drawdown.png`) e Nulo Pareado OOS (`rel_08_nulo_pareado.png`).
+  * Direita-Base: Gráfico de calibração do Filtro de Regime (`images/11_regime_calibracao.png`) e Nulo Pareado OOS (`images/14_out_of_sample_nulo.png`).
 
 #### Blocos de Texto (<650 caracteres cada):
 * **[Bloco 4.1 — Diagnóstico da MST no Nível Micro]:**  
@@ -595,19 +595,33 @@ Esta seção é o **painel de verdade institucional completo**, reunindo as mét
 
 # 12. Catálogo de Imagens e Artefatos do Repositório
 
-Todas as imagens referenciadas estão geradas, auditadas e disponíveis em alta resolução nas seguintes pastas:
+> ⚠️ **ATENÇÃO — USE EXCLUSIVAMENTE AS IMAGENS CANÔNICAS ABAIXO.** As imagens antigas em `images/relatorio/rel_*.png` foram geradas para uma versão anterior da estratégia (Nexus V3 puro, sem filtro de regime e sem V5 com correlação média). **Elas estão obsoletas e NÃO devem ser usadas no relatório final.** As imagens canônicas são as listadas abaixo, localizadas na raiz de `images/`, geradas em 16/08/2026 com a arquitetura final V5 + Regime.
 
-### Imagens Oficiais para o Relatório (`images/relatorio/`):
-* `rel_01_mst_comparativa.png` — Árvores Geradoras Mínimas da B3 em regime normal vs. contração severa na COVID-19 (Março/2020).
-* `rel_02_equity_insample.png` — Curva de evolução patrimonial In-Sample (2011–2018): Nexus V3 vs CDI vs Ibovespa vs ML.
-* `rel_03_montecarlo.png` — Distribuição de Monte Carlo com a posição relativa do Nexus V3.
-* `rel_04_custos.png` — Curvas de sensibilidade a custos operacionais e taxa de corretagem/slippage (break-even em 16 bps).
-* `rel_05_drawdown.png` — Drawdown submarino comparando Nexus V3 (-13.6%) vs MST Pura (-44.4%) e Ibovespa (-43.7%).
-* `rel_06_alocacao.png` — Dinâmica histórica de alocação de ativos aprovados e amortecedor de caixa em CDI ao longo do tempo.
-* `rel_07_ablacao_variantes.png` — Gráfico de barras comparando Sharpe ratio de todas as variantes de ablação (V0 a V6).
-* `rel_08_nulo_pareado.png` — Histograma de densidade do Nulo Pareado In-Sample vs Nexus.
-* `rel_09_oos_equity.png` — Curva de evolução patrimonial Out-of-Sample (2019–2026): Nexus V5 + Regime vs V3 vs CDI vs BOVA11.
-* `rel_10_regime_drawdown.png` — Efeito protetor do Filtro de Regime na contenção de perdas e redução de volatilidade no OOS.
+### Imagens Canônicas para o Relatório Final (`images/`):
+
+| # | Arquivo | Conteúdo | Uso no Relatório |
+|---|---|---|---|
+| 01 | `01_mvp_puro_drawdown.png` | Drawdown submarino do MVP puro e variantes — mostra como cada camada protege contra perdas | Página 3 (Backtest/Ablação) |
+| 02 | `01_mvp_puro_turnover_mensal.png` | Turnover mensal do MVP puro — evidencia o giro estrutural | Página 3 (complementar) |
+| 03 | `02_baseline_macacos_in_sample.png` | Baseline de macacos aleatórios In-Sample — controle estatístico | Página 3 (Monte Carlo) |
+| 04 | `03_heatmap_alpha_cv.png` | Heatmap de alpha na cross-validation temporal — estabilidade dos parâmetros | Página 3 (validação de robustez) |
+| 05 | `04_batalha_alocacao_acoes_vs_cdi.png` | Dinâmica histórica de alocação ações vs CDI ao longo do tempo (todas as variantes) | Página 2 (Modelagem) ou Página 3 |
+| 06 | `05_batalha_n_acoes_aprovadas.png` | Número de ações aprovadas por mês em cada variante — efeito do momentum | Página 2 (Modelagem) |
+| 07 | `06_batalha_equity_curve.png` | Equity curves comparativas de todas as variantes (V0–V6, V3+Regime, V5+Regime) | Página 3 (Ablação In-Sample) |
+| 08 | `07_sensibilidade_custos_transacao.png` | Sensibilidade a custos de transação e break-even por variante | Página 3 (robustez a custos) |
+| 09 | `08_ablacao_distribuicao_nulo.png` | Distribuição do nulo na ablação — posição relativa do Nexus | Página 3 (Monte Carlo/Ablação) |
+| 10 | `09_ablacao_equity_variantes.png` | Equity curves de ablação por camadas com todas as variantes In-Sample | Página 3 (gráfico principal de ablação) |
+| 11 | `10_monte_carlo_corrigido.png` | Monte Carlo corrigido com 3 nulos de controle (N1, N2, N3) | Página 3 (significância estatística) |
+| 12 | `11_regime_calibracao.png` | Calibração do filtro de regime topológico MST — contração da árvore em crises | Página 1 (tese visual) e Página 4 (proteção OOS) |
+| 13 | `12_cv_temporal_estabilidade.png` | Cross-validation temporal — estabilidade do SMA 150 nos 3 folds expansíveis | Página 3 (validação de parâmetro) |
+| 14 | `13_out_of_sample_equity.png` | **Gráfico principal OOS:** Equity Nexus V5+Regime vs V3 vs CDI vs BOVA11 (2019–2026) | **Página 4** (resultado central do teste cego) |
+| 15 | `14_out_of_sample_nulo.png` | Nulo Pareado Out-of-Sample — V5 no percentil 100% (p=0.0%) | **Página 4** (validação estatística OOS) |
+
+### Imagem Oficial da Página 1 (`images/relatorio/`):
+* `images/relatorio/rel_01_mst_comparativa.png` — **Assinatura Visual da Página 1:** Árvores Geradoras Mínimas da B3 em regime normal vs. contração severa na COVID-19 (Março/2020), ilustrando o fenômeno de contração geométrica da rede.
+
+### ❌ Imagens Obsoletas de Backtest — NÃO USAR (`images/relatorio/rel_02` a `rel_10`):
+As imagens `rel_02` a `rel_10` na pasta `images/relatorio/` refletem uma versão preliminar do backtest **anterior à introdução do filtro de regime e da seleção por correlação média (V5)**. Elas foram substituídas pelas imagens canônicas numeradas acima (`01_` a `14_` na raiz de `images/`).
 
 ### Scripts Mestres de Reprodução (`scripts/`):
 * `src/nexus/motor.py` — Motor centralizado de simulação com garantia SHA-256.
