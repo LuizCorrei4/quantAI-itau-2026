@@ -146,15 +146,15 @@ Anonimato: Zero menção a nomes de integrantes, equipe ou universidade/institui
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ ABLAÇÃO IN-SAMPLE (2011–2018) & O VEREDITO DE OCCAM                    [NEXUS · 03]    │
 ├──────────────────────────────────────────┬─────────────────────────────────────────────┤
-│ GRÁFICO 1: `images/09_ablacao_equity_    │ TABELA DE ABLAÇÃO DE SHARPE (2011–2018)     │
-│             variantes.png`               │ • V0 (Universo 80):     CAGR  7,9% | Sh -0,12 │
-│ [Curvas de Equity In-Sample: V0 a V6]    │ • V1 (Topologia Pura):  CAGR  3,9% | Sh -0,35 │
-├──────────────────────────────────────────┤ • V2 (+ Momentum):      CAGR 12,0% | Sh +0,10 │
-│ GRÁFICO 2: `images/01_mvp_puro_          │ • V3 (+ Cap CVM 175):   CAGR 12,2% | Sh +0,13 │
-│             drawdown.png`                │ • V3 + Regime (p10):    CAGR 13,1% | Sh +0,20 │
-│ [Drawdown submarino comparativo]         │ • V5 (Menor Corr Média):CAGR 14,2% | Sh +0,27 │
-│                                          │ • V5 + Regime (FINAL):  CAGR 14,9% | Sh +0,33 │
-│ LEGENDA: CONTROLE CIRÚRGICO DE DRAWDOWN  │ • CDI: 10,3% | IBOV: 6,2% (Sharpe -0,18)    │
+│ GRÁFICO 1: `images/09_ablacao_equity_    │ TABELA DE ABLAÇÃO (O QUE É CADA VARIANTE?): │
+│             variantes.png`               │ [Método científico de isolamento de camadas]│
+│ [Curvas de Equity In-Sample: V0 a V6]    │ • V0: Base Neutra (80 ações iguais, sem filtro)│
+├──────────────────────────────────────────┤ • V1: + Topologia Pura (Fracasso do MVP)    │
+│ GRÁFICO 2: `images/01_mvp_puro_          │ • V2: + Momentum (O verdadeiro motor alpha) │
+│             drawdown.png`                │ • V3: + Cap 10% CVM 175 (Defesa passiva CDI)│
+│ [Drawdown submarino comparativo]         │ • V3+Reg: + Freio Macro MST (Corta em crise)│
+│                                          │ • V5+Reg: Arquitetura Final (Menor Corr.+Reg)│
+│ LEGENDA: CONTROLE CIRÚRGICO DE DRAWDOWN  │ • Benchmark: CDI 10,3% | IBOV 6,2% (Sh -0,18)│
 ├──────────────────────────────────────────┴─────────────────────────────────────────────┤
 │ O VEREDITO DE OCCAM (ML DESCARTADO)      │ MONTE CARLO & RESISTÊNCIA A CUSTOS          │
 │ O modelo de Machine Learning parecia     │ • Bate o nulo clássico N1 (p = 0,5%).       │
@@ -168,13 +168,15 @@ Anonimato: Zero menção a nomes de integrantes, equipe ou universidade/institui
 
 #### Texto Dissertativo & Roteiro do Slide 03:
 * **Header:** `BACKTEST IN-SAMPLE (2011–2018)` | *Subtítulo:* `DECOMPOSIÇÃO DE ALPHA, MONTE CARLO & FALSIFICAÇÃO DE OCCAM`
-* **Narrativa da Ablação Experimental:**
-  > "O teste empírico no período In-Sample (2011–2018: 91 meses) revela a anatomia cirúrgica do retorno através do método de ablação por camadas:  
+* **Entendendo a Ablação Experimental (De Onde Vem o Retorno?):**
+  > "Para provar cientificamente a origem de cada parcela de retorno e risco — sem recorrer a 'caixas pretas' —, a estratégia foi submetida ao **método de ablação**, que liga e desliga cada camada do algoritmo sequencialmente:  
   > 
-  > • **O Fracasso do MVP Puro (V1):** Alocar apenas na periferia da MST sem direção destrói capital (CAGR de 3,9% vs 10,3% do CDI; Sharpe negativo de -0,347).  
-  > • **O Motor de Alpha (Momentum):** O acoplamento da SMA 150 (V3 vs V1) injeta **+0,473 de Sharpe**, elevando o retorno para 12,2% a.a., gerando Alpha de Jensen de +3,6% a.a. e Sortino de +0,27 com baixo Beta (0,44).  
-  > • **A Defesa Estrutural (Cap 10% + Regime):** O teto de concentração reduz o drawdown histórico para -13,6%, enquanto o filtro de regime eleva o Sharpe para +0,195.  
-  > • **A Evolução V5 + Regime:** A seleção por menor correlação média culmina em **CAGR de 14,9% a.a., Sharpe de +0,332, Sortino de +0,55 e Drawdown de apenas -12,3%**."
+  > • **V0 · Base Neutra de Mercado (80 Ações em Pesos Iguais):** Carteira ingênua sem nenhum filtro. Rende 7,9% a.a. com Sharpe de -0,118 (perde feio para o CDI).  
+  > • **V1 · Topologia Pura (O Fracasso do MVP):** Seleciona apenas as 20 ações periféricas da MST sem filtro de tendência. O resultado destrói capital (CAGR de 3,9% a.a., Sharpe de -0,347 e Drawdown de -44,4%), provando que *periferia sem direção é armadilha*.  
+  > • **V2 · Topologia + Momentum Direcional:** Adiciona a regra de comprar apenas ativos com $P_t > \text{SMA}_{150}$. Essa única camada injeta **+0,473 de Sharpe**, elevando o retorno para 12,0% a.a. — provando ser o verdadeiro **motor de alpha**.  
+  > • **V3 · Nexus Oficial In-Sample (+ Cap de 10% CVM 175):** Impõe teto de 10% por ação e recua o saldo ocioso para o CDI. O retorno sobe para 12,2% a.a., o Sharpe para +0,127 e o Drawdown cai pela metade (para -13,6%).  
+  > • **V3 + Regime · (+ Freio Macro MST):** Acopla o sensor macro de crise, elevando o Sharpe para +0,195 (+0,068 de ganho marginal).  
+  > • **V5 + Regime · Arquitetura Final Completa:** Substitui a poda micro da MST pela Menor Correlação Média com freio de regime, atingindo **CAGR de 14,9% a.a., Sharpe de +0,332, Sortino de +0,55 e Drawdown de apenas -12,3%**."
 * **A Falsificação Científica e o Descarte do Machine Learning:**
   > "Em fase preliminar, um classificador Random Forest/XGBoost apresentou Sharpe aparente de +0,481. No entanto, uma auditoria rigorosa identificou *data leakage* temporal. Ao implementar a esteira Walk-Forward (retreino mensal em $T-1$, inferência cega em $T$), o Sharpe real despencou para **+0,053** devido a ruído de microestrutura e turnover excessivo.  
   > 
