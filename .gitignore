@@ -10,3 +10,8 @@ dados/processados/*.parquet
 temp/
 
 tickets_pessoa2/
+
+nexus_contexto_planejamento/
+diretrizes_para_gerar_relatorio/
+tickets_correção/
+contexto_geracao_ideias/
